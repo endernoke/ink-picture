@@ -1,81 +1,186 @@
 import React, { useState, useEffect } from "react";
 import Image from "../src/components/image/index.js";
-import { RenderOptions, Text, Box, render } from "ink";
-import { TerminalInfoProvider } from "../src/context/TerminalInfo.js";
+import { Text, Box, render, useInput } from "ink";
+import {
+  TerminalInfoProvider,
+  useTerminalCapabilities,
+} from "../src/context/TerminalInfo.js";
 
-const protocol = process.argv[2] || "ascii";
+// Demo image - a simple test image that should work reliably
+const DEMO_IMAGE = "https://sipi.usc.edu/database/preview/misc/4.1.05.png";
 
-const testImages = [
-  "https://sipi.usc.edu/database/preview/misc/4.1.01.png",
-  "https://sipi.usc.edu/database/preview/misc/4.1.06.png",
-  "https://sipi.usc.edu/database/preview/misc/4.2.06.png",
-  "https://www.math.hkust.edu.hk/~masyleung/Teaching/CAS/MATLAB/image/images/cameraman.jpg",
-  "https://example.com/bad-url/image-that-doesnt-exist.jpg",
-  "/home/endernoke/Downloads/wn_php.png",
-  "https://upload.wikimedia.org/wikipedia/en/thumb/7/7d/Lenna_%28test_image%29.png/500px-Lenna_%28test_image%29.png",
+type ProtocolConfig = {
+  name: string;
+  protocol: string;
+  description: string;
+  requirements: string;
+  getSupportStatus: (caps: any) => {
+    supported: boolean;
+    reason: string;
+  };
+};
+
+const protocols: ProtocolConfig[] = [
+  {
+    name: "ASCII Art",
+    protocol: "ascii",
+    description: "Character-based rendering",
+    requirements: "None (universal fallback)",
+    getSupportStatus: () => ({ supported: true, reason: "Always supported" }),
+  },
+  {
+    name: "Half-Block",
+    protocol: "halfBlock",
+    description: "Color rendering with Unicode blocks",
+    requirements: "Unicode + Color support",
+    getSupportStatus: (caps) => ({
+      supported: caps?.supportsUnicode && caps?.supportsColor,
+      reason: !caps?.supportsUnicode
+        ? "No Unicode support"
+        : !caps?.supportsColor
+          ? "No color support"
+          : "Fully supported",
+    }),
+  },
+  {
+    name: "Braille Patterns",
+    protocol: "braille",
+    description: "High-res monochrome with Braille",
+    requirements: "Unicode support",
+    getSupportStatus: (caps) => ({
+      supported: caps?.supportsUnicode,
+      reason: caps?.supportsUnicode ? "Fully supported" : "No Unicode support",
+    }),
+  },
+  {
+    name: "Sixel Graphics",
+    protocol: "sixel",
+    description: "True color bitmap (experimental)",
+    requirements: "Sixel graphics protocol",
+    getSupportStatus: (caps) => ({
+      supported: caps?.supportsSixelGraphics,
+      reason: caps?.supportsSixelGraphics
+        ? "Fully supported"
+        : "No Sixel support detected",
+    }),
+  },
 ];
 
-function TestImage() {
-  const [, setTick] = useState(true);
+function ProtocolDemo({ config }: { config: ProtocolConfig }) {
+  const capabilities = useTerminalCapabilities();
+  const supportInfo = config.getSupportStatus(capabilities);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      setTick((t) => !t);
-    }, 10000);
-    return () => clearInterval(id);
-  }, []);
+  return (
+    <Box flexDirection="column">
+      <Box>
+        <Text bold color="cyan">
+          {config.name}
+        </Text>
+        <Text> - {config.description}</Text>
+      </Box>
+      <Box marginLeft={2}>
+        <Text dimColor>Requirements: {config.requirements}</Text>
+      </Box>
+      <Box marginLeft={2}>
+        <Text>Status: </Text>
+        <Text color={supportInfo.supported ? "green" : "red"}>
+          {supportInfo.supported ? "✓" : "✗"} {supportInfo.reason}
+        </Text>
+      </Box>
+      <Box
+        borderStyle="round"
+        borderColor={supportInfo.supported ? "green" : "red"}
+        width={28}
+        height={14}
+      >
+        {supportInfo.supported ? (
+          <Image
+            src={DEMO_IMAGE}
+            protocol={config.protocol}
+            alt={`${config.name} demo`}
+          />
+        ) : (
+          <Box
+            alignItems="center"
+            justifyContent="center"
+            height="100%"
+            width="100%"
+          >
+            <Text color="red">Not Supported</Text>
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+function TerminalInfo() {
+  const capabilities = useTerminalCapabilities();
+
+  if (!capabilities) {
+    return (
+      <Box marginBottom={2}>
+        <Text color="yellow">Detecting terminal capabilities...</Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box flexDirection="column" marginBottom={2}>
+      <Text bold color="magenta">
+        Terminal Capabilities Detected:
+      </Text>
+      <Box marginLeft={2} flexDirection="column">
+        <Text>Unicode: {capabilities.supportsUnicode ? "✓ Yes" : "✗ No"}</Text>
+        <Text>Color: {capabilities.supportsColor ? "✓ Yes" : "✗ No"}</Text>
+        <Text>
+          Sixel Graphics:{" "}
+          {capabilities.supportsSixelGraphics ? "✓ Yes" : "✗ No"}
+        </Text>
+        <Text>
+          Kitty Graphics:{" "}
+          {capabilities.supportsKittyGraphics ? "✓ Yes" : "✗ No"}
+        </Text>
+      </Box>
+    </Box>
+  );
+}
+
+function ProtocolShowcase() {
+  useInput((input, key) => {
+    if (key.ctrl && input === "c") {
+      process.exit();
+    }
+  });
+
   return (
     <TerminalInfoProvider>
       <Box flexDirection="column">
-        <Text>{protocol}</Text>
-        <Box flexDirection="column">
-          {/* First row */}
-          <Box flexDirection="row">
-            {testImages.slice(0, 3).map((src, index) => (
-              <Box
-                key={index}
-                borderStyle="round"
-                borderColor="cyan"
-                width={32}
-                height={17}
-              >
-                <Image
-                  src={src}
-                  alt={`Test Image ${index + 1}`}
-                  protocol={protocol}
-                />
-              </Box>
-            ))}
-          </Box>
-          {/* Second row */}
-          <Box flexDirection="row">
-            {testImages.slice(3, 6).map((src, index) => (
-              <Box
-                key={index + 3}
-                borderStyle="round"
-                borderColor="cyan"
-                width={32}
-                height={17}
-              >
-                <Image
-                  src={src}
-                  alt={`Test Image ${index + 4}`}
-                  protocol={protocol}
-                />
-              </Box>
-            ))}
-          </Box>
+        <Text bold color="white" backgroundColor="blue">
+          🖼️ ink-picture Protocol Showcase
+        </Text>
+        <Box marginBottom={1}>
+          <Text dimColor>Press Ctrl+C to exit</Text>
         </Box>
-      </Box>
-      <Box>
-        <Text>Ctrl+C to exit</Text>
+
+        {/* <TerminalInfo /> */}
+
+        <Box flexDirection="row">
+          {protocols.map((config) => (
+            <ProtocolDemo key={config.protocol} config={config} />
+          ))}
+        </Box>
+
+        <Box marginTop={2} borderStyle="single" borderColor="gray">
+          <Text dimColor>
+            💡 Tip: This example showcases all available rendering protocols.
+            The Image component will automatically choose the best one for your
+            terminal unless you specify a protocol explicitly.
+          </Text>
+        </Box>
       </Box>
     </TerminalInfoProvider>
   );
 }
 
-render(<TestImage />);
-
-setTimeout(() => {
-  process.exit(0);
-}, 20000);
+render(<ProtocolShowcase />);
