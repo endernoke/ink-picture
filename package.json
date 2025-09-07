@@ -1,6 +1,6 @@
 {
   "name": "ink-picture",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Better image component for Ink CLI/TUIs",
   "license": "MIT",
   "repository": "https://github.com/endernoke/ink-picture",
@@ -36,6 +36,7 @@
   "keywords": [
     "ink",
     "image",
+    "photo",
     "display",
     "component",
     "jsx",
@@ -47,7 +48,9 @@
     "terminal"
   ],
   "devDependencies": {
+    "@types/ascii-art": "^1.4.3",
     "@types/node": "^24.3.0",
+    "@types/node-fetch": "^2.6.13",
     "@types/react": "^19.1.12",
     "ava": "^6.4.1",
     "eslint": "^9.33.0",
@@ -83,8 +86,11 @@
   "dependencies": {
     "ascii-art": "^2.8.5",
     "chalk": "^5.6.0",
+    "is-unicode-supported": "^2.1.0",
     "jimp": "^1.6.0",
+    "node-fetch": "^3.3.2",
     "sharp": "^0.34.3",
-    "sixel": "^0.16.0"
+    "sixel": "^0.16.0",
+    "supports-color": "^10.2.0"
   }
 }

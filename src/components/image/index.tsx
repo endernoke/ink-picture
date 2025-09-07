@@ -73,7 +73,7 @@ const ImageRenderer = (props: ImageProps & { protocol: string }) => {
  *
  * This component automatically detects terminal capabilities and falls back
  * to supported rendering protocols in order of preference:
- * sixel -> braille -> halfBlock -> ascii
+ * halfBlock -> braille -> ascii
  *
  * **IMPORTANT: TerminalInfo Provider Requirement**
  * This component MUST be used within a `<TerminalInfoProvider>` component tree.
@@ -116,7 +116,7 @@ const ImageRenderer = (props: ImageProps & { protocol: string }) => {
  * - Support for both local files and remote URLs
  *
  * Protocol Options:
- * - `sixel`: Highest quality, requires Sixel graphics support
+ * - `sixel`: (experimental) Highest quality, requires Sixel graphics support
  * - `braille`: High resolution monochrome, requires Unicode support
  * - `halfBlock`: Good color quality, requires Unicode and color support
  * - `ascii`: Universal compatibility, works in all terminals
@@ -136,11 +136,7 @@ function Image({
   /**
    * Determines the next fallback protocol based on the current protocol and attempt count.
    *
-   * Fallback hierarchy:
-   * - sixel -> braille -> halfBlock -> ascii
-   * - braille -> halfBlock -> ascii
-   * - halfBlock -> ascii
-   * - ascii (final fallback, always supported)
+   * Fallback hierarchy: halfBlock -> braille -> ascii
    *
    * @param currentProtocol - The currently attempted protocol
    * @param attemptCount - Number of fallback attempts made
@@ -150,15 +146,15 @@ function Image({
     (currentProtocol: string, attemptCount: number): string => {
       if (currentProtocol === "sixel") {
         return attemptCount === 0
-          ? "braille"
+          ? "halfBlock"
           : attemptCount === 1
-            ? "halfBlock"
+            ? "braille"
             : "ascii";
       }
-      if (currentProtocol === "braille") {
-        return attemptCount === 0 ? "halfBlock" : "ascii";
-      }
       if (currentProtocol === "halfBlock") {
+        return attemptCount === 0 ? "braille" : "ascii";
+      }
+      if (currentProtocol === "braille") {
         return "ascii";
       }
       return "ascii"; // Final fallback
