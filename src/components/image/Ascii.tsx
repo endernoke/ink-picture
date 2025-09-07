@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, Text, Newline, measureElement, type DOMElement } from "ink";
-import { join } from "path";
-import { tmpdir } from "os";
-import { randomUUID } from "crypto";
+import chalk from "chalk";
 import sharp from "sharp";
-import fs from "fs/promises";
-import AsciiArt from "ascii-art";
 import { type ImageProps } from "./protocol.js";
-import { fetchImage } from "../../utils/image.js";
+import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
 
 /**
@@ -55,23 +51,29 @@ function AsciiImage(props: ImageProps) {
       }
       setHasError(false);
 
-      // const metadata = await image.metadata();
+      const metadata = await image.metadata();
 
       if (!containerRef.current) return;
-      const { width: maxWidth } = measureElement(containerRef.current);
+      const { width: maxWidth, height: maxHeight } = measureElement(
+        containerRef.current,
+      );
 
-      // // Calculate target size - ASCII art is character-based, so we use maxWidth directly
-      // const {width} = calculateImageSize({
-      // 	maxWidth,
-      // 	maxHeight,
-      // 	originalAspectRatio: metadata.width! / metadata.height!,
-      // 	specifiedWidth: props.width,
-      // 	specifiedHeight: props.height,
-      // });
+      // Calculate target size - ASCII art is character-based, so we don't need to scale original sizes
+      const { width, height } = calculateImageSize({
+        maxWidth,
+        maxHeight,
+        originalAspectRatio: metadata.width! / (metadata.height! / 2),
+        specifiedWidth: props.width,
+        specifiedHeight: props.height ? props.height / 2 : undefined,
+      });
+
+      const resizedImage = await image
+        .resize(width, height, { fit: "fill" })
+        .raw()
+        .toBuffer({ resolveWithObject: true });
 
       const output = await toAscii(
-        image,
-        props.width ?? maxWidth,
+        resizedImage,
         terminalCapabilities?.supportsColor,
       );
       setImageOutput(output);
@@ -106,58 +108,46 @@ function AsciiImage(props: ImageProps) {
   );
 }
 
-/**
- * Converts an image to ASCII art representation.
- *
- * This function processes the image through several steps:
- * 1. Applies image preprocessing (sharpening, normalization) for better conversion results
- * 2. Creates a temporary PNG file for the ascii-art library
- * 3. Generates ASCII art with optional color support
- * 4. Cleans up temporary files
- *
- * @param image - Sharp image instance to convert
- * @param width - Target width in characters for the ASCII output
- * @param supportsColor - Whether to generate colored ASCII art
- * @returns Promise resolving to ASCII art string representation
- */
 async function toAscii(
-  image: sharp.Sharp,
-  width: number,
-  supportsColor?: boolean,
-): Promise<string> {
-  try {
-    // Preprocess the image for better ASCII conversion
-    const processedBuffer = await image.sharpen().normalize().png().toBuffer();
+  imageData: {
+    data: Buffer;
+    info: sharp.OutputInfo;
+  },
+  colored: boolean = true,
+) {
+  const { data, info } = imageData;
+  const { width, height, channels } = info;
 
-    // Create temporary file for ascii-art library
-    const tempPath = join(tmpdir(), `${randomUUID()}.png`);
-    await fs.writeFile(tempPath, processedBuffer);
+  // ascii characters ordered by brightness
+  const ascii_chars =
+    "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
 
-    try {
-      // Generate ASCII art using ascii-art library
-      const asciiArt = await AsciiArt.image({
-        filepath: tempPath,
-        width,
-        colored: supportsColor ?? false,
-      }).toPromise();
+  let result = "";
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const pixelIndex = (y * width + x) * channels;
 
-      // Clean up temporary file
-      await fs.unlink(tempPath);
+      const r = data[pixelIndex] as number;
+      const g = data[pixelIndex + 1] as number;
+      const b = data[pixelIndex + 2] as number;
+      const a = channels === 4 ? (data[pixelIndex + 3] as number) : 255;
 
-      return asciiArt;
-    } catch (error) {
-      // Clean up temporary file even if conversion fails
-      try {
-        await fs.unlink(tempPath);
-      } catch {
-        // Ignore cleanup errors
-      }
-      throw error;
+      // this is different from perceived luminance
+      const intensity = r + g + b + a == 0 ? 0 : (r + g + b + a) / (255 * 4);
+      const pixel_char =
+        ascii_chars[
+          ascii_chars.length -
+            1 -
+            Math.floor(intensity * (ascii_chars.length - 1))
+        ];
+
+      result += colored ? chalk.rgb(r, g, b)(pixel_char) : pixel_char;
     }
-  } catch (error) {
-    console.error("Error converting image to ASCII:", error);
-    return "";
+
+    result += "\n";
   }
+
+  return result;
 }
 
 export default AsciiImage;

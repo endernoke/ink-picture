@@ -4,6 +4,7 @@ import { Text, Box, render, useInput } from "ink";
 import {
   TerminalInfoProvider,
   useTerminalCapabilities,
+  type TerminalCapabilities,
 } from "../src/context/TerminalInfo.js";
 
 // Demo image - a simple test image that should work reliably
@@ -14,7 +15,7 @@ type ProtocolConfig = {
   protocol: string;
   description: string;
   requirements: string;
-  getSupportStatus: (caps: unknown) => {
+  getSupportStatus: (caps: TerminalCapabilities) => {
     supported: boolean;
     reason: string;
   };
@@ -68,7 +69,7 @@ const protocols: ProtocolConfig[] = [
 
 function ProtocolDemo({ config }: { config: ProtocolConfig }) {
   const capabilities = useTerminalCapabilities();
-  const supportInfo = config.getSupportStatus(capabilities);
+  const supportInfo = config.getSupportStatus(capabilities!);
 
   return (
     <Box flexDirection="column">
