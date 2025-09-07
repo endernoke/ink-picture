@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Image from "../src/components/image/index.js";
 import { Text, Box, render, useInput } from "ink";
 import {
@@ -14,7 +14,7 @@ type ProtocolConfig = {
   protocol: string;
   description: string;
   requirements: string;
-  getSupportStatus: (caps: any) => {
+  getSupportStatus: (caps: unknown) => {
     supported: boolean;
     reason: string;
   };
@@ -114,38 +114,6 @@ function ProtocolDemo({ config }: { config: ProtocolConfig }) {
   );
 }
 
-function TerminalInfo() {
-  const capabilities = useTerminalCapabilities();
-
-  if (!capabilities) {
-    return (
-      <Box marginBottom={2}>
-        <Text color="yellow">Detecting terminal capabilities...</Text>
-      </Box>
-    );
-  }
-
-  return (
-    <Box flexDirection="column" marginBottom={2}>
-      <Text bold color="magenta">
-        Terminal Capabilities Detected:
-      </Text>
-      <Box marginLeft={2} flexDirection="column">
-        <Text>Unicode: {capabilities.supportsUnicode ? "✓ Yes" : "✗ No"}</Text>
-        <Text>Color: {capabilities.supportsColor ? "✓ Yes" : "✗ No"}</Text>
-        <Text>
-          Sixel Graphics:{" "}
-          {capabilities.supportsSixelGraphics ? "✓ Yes" : "✗ No"}
-        </Text>
-        <Text>
-          Kitty Graphics:{" "}
-          {capabilities.supportsKittyGraphics ? "✓ Yes" : "✗ No"}
-        </Text>
-      </Box>
-    </Box>
-  );
-}
-
 function ProtocolShowcase() {
   useInput((input, key) => {
     if (key.ctrl && input === "c") {
@@ -162,8 +130,6 @@ function ProtocolShowcase() {
         <Box marginBottom={1}>
           <Text dimColor>Press Ctrl+C to exit</Text>
         </Box>
-
-        {/* <TerminalInfo /> */}
 
         <Box flexDirection="row">
           {protocols.map((config) => (
