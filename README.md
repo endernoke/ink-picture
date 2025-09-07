@@ -4,6 +4,8 @@ Better image component for [Ink](https://github.com/vadimdemedes/ink) CLI/TUI ap
 
 Display images in your terminal with automatic protocol detection and graceful fallbacks. Supports ASCII, Braille patterns, Unicode half-blocks, and Sixel graphics.
 
+<img width="1919" height="765" alt="Screenshot 2025-09-07 160615" src="https://github.com/user-attachments/assets/0be5be69-043a-446a-aa8a-7d138919113c" />
+
 ## Who's using ink-picture?
 
 - [Instagram CLI](https://github.com/supreme-gg-gg/instagram-cli): CLI and terminal client for Instagram
