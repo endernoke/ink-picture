@@ -1,0 +1,84 @@
+{
+  "name": "ink-picture",
+  "version": "0.0.0",
+  "description": "Better image component for Ink CLI/TUIs",
+  "license": "MIT",
+  "repository": "https://github.com/endernoke/ink-picture",
+  "author": {
+    "name": "James Zheng",
+    "email": "endernoke@gmail.com",
+    "url": "https://github.com/endernoke"
+  },
+  "type": "module",
+  "exports": {
+    "types": "./build/index.d.ts",
+    "default": "./build/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "test": "tsc --noEmit && eslint . && FORCE_COLOR=1 ava",
+    "build": "tsc",
+    "prepare": "husky",
+    "pretest": "tsc",
+    "lint": "eslint ."
+  },
+  "files": [
+    "build"
+  ],
+  "keywords": [
+    "ink",
+    "image",
+    "display",
+    "component",
+    "jsx",
+    "react",
+    "picture",
+    "render",
+    "viewer",
+    "cli",
+    "terminal"
+  ],
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.12",
+    "ava": "^6.4.1",
+    "eslint": "^9.33.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "husky": "^9.1.7",
+    "i": "^0.3.7",
+    "ink": "^6.2.2",
+    "ink-testing-library": "^4.0.0",
+    "npm": "^11.5.2",
+    "prettier": "^3.6.2",
+    "react": "^19.1.1",
+    "tsimp": "^2.0.12",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.40.0"
+  },
+  "peerDependencies": {
+    "ink": ">=5",
+    "react": ">=18"
+  },
+  "ava": {
+    "extensions": {
+      "ts": "module",
+      "tsx": "module"
+    },
+    "nodeArguments": [
+      "--import=tsimp/import"
+    ]
+  },
+  "dependencies": {
+    "ascii-art": "^2.8.5",
+    "chalk": "^5.6.0",
+    "jimp": "^1.6.0",
+    "sharp": "^0.34.3",
+    "sixel": "^0.16.0"
+  }
+}

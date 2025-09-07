@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "outDir": "build",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "jsx": "react"
+  },
+  "include": ["src", "example"]
+}
