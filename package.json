@@ -1,6 +1,6 @@
 {
   "name": "ink-picture",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Better image component for Ink CLI/TUIs",
   "license": "MIT",
   "repository": "https://github.com/endernoke/ink-picture",
