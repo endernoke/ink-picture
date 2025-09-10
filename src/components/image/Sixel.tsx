@@ -188,21 +188,28 @@ function SixelImage(props: ImageProps) {
     process.on("SIGINT", onSigInt);
     process.on("SIGTERM", onSigInt);
 
-    stdout.write(cursorUp(componentPosition.appHeight - componentPosition.row));
-    stdout.write("\r");
-    stdout.write(cursorForward(componentPosition.col));
-    stdout.write(imageOutput);
-    stdout.write(
-      cursorDown(componentPosition.appHeight - componentPosition.row),
-    );
-    stdout.write("\r");
+    let previousRenderBoundingBox:
+      | { row: number; col: number; width: number; height: number }
+      | undefined = undefined;
+    const renderTimeout = setTimeout(() => {
+      stdout.write(
+        cursorUp(componentPosition.appHeight - componentPosition.row),
+      );
+      stdout.write("\r");
+      stdout.write(cursorForward(componentPosition.col));
+      stdout.write(imageOutput);
+      stdout.write(
+        cursorDown(componentPosition.appHeight - componentPosition.row),
+      );
+      stdout.write("\r");
 
-    const previousRenderBoundingBox = {
-      row: stdout.rows - componentPosition.appHeight + componentPosition.row,
-      col: componentPosition.col,
-      width: actualSizeInCells!.width,
-      height: actualSizeInCells!.height,
-    };
+      previousRenderBoundingBox = {
+        row: stdout.rows - componentPosition.appHeight + componentPosition.row,
+        col: componentPosition.col,
+        width: actualSizeInCells!.width,
+        height: actualSizeInCells!.height,
+      };
+    }, 50); // Delay to allow Ink/terminal to finish its render
 
     return () => {
       process.removeListener("exit", onExit);
@@ -210,6 +217,9 @@ function SixelImage(props: ImageProps) {
       process.removeListener("SIGTERM", onSigInt);
 
       if (!shouldCleanupRef.current) return;
+      clearTimeout(renderTimeout);
+      // If we never rendered the image, nothing to clean up
+      if (!previousRenderBoundingBox) return;
 
       stdout.write(
         cursorUp(componentPosition.appHeight - componentPosition.row),
