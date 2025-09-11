@@ -4,6 +4,7 @@ import AsciiImage from "./Ascii.js";
 import HalfBlockImage from "./HalfBlock.js";
 import BrailleImage from "./Braille.js";
 import SixelImage from "./Sixel.js";
+import ITerm2Image from "./ITerm2.js";
 
 /**
  * Creates a registry for managing image rendering protocols.
@@ -53,6 +54,10 @@ protocolRegistry.register({
 protocolRegistry.register({
   name: "sixel",
   render: SixelImage,
+});
+protocolRegistry.register({
+  name: "iterm2",
+  render: ITerm2Image,
 });
 
 /**
@@ -117,6 +122,7 @@ const ImageRenderer = (props: ImageProps & { protocol: string }) => {
  *
  * Protocol Options:
  * - `sixel`: (experimental) Highest quality, requires Sixel graphics support
+ * - `iterm2`: (experimental) High quality, requires iTerm2 graphics support
  * - `braille`: High resolution monochrome, requires Unicode support
  * - `halfBlock`: Good color quality, requires Unicode and color support
  * - `ascii`: Universal compatibility, works in all terminals
@@ -144,6 +150,13 @@ function Image({
    */
   const getFallbackProtocol = useCallback(
     (currentProtocol: string, attemptCount: number): string => {
+      if (currentProtocol === "iterm2") {
+        return attemptCount === 0
+          ? "halfBlock"
+          : attemptCount === 1
+            ? "braille"
+            : "ascii";
+      }
       if (currentProtocol === "sixel") {
         return attemptCount === 0
           ? "halfBlock"

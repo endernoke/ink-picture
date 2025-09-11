@@ -2,6 +2,52 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import queryEscapeSequence from "../utils/queryEscapeSequence.js";
 import supportsColor from "supports-color";
 import checkIsUnicodeSupported from "is-unicode-supported";
+import iterm2Version from "iterm2-version";
+
+function supportsITerm2() {
+  if (process.env["TERM_PROGRAM"] === "iTerm.app") {
+    const version = iterm2Version();
+    if (!version || Number(version[0]) < 3) return false;
+    return true;
+  } else if (process.env["TERM_PROGRAM"] === "WezTerm") {
+    // WezTerm is compatible with iTerm2 inline images starting from version 20220319-142410-0fcdea07
+    // See https://wezterm.org/imgcat.html
+    const version = process.env["TERM_PROGRAM_VERSION"];
+    if (!version) return false;
+    const date = parseInt(version.split("-")[0]);
+    if (!Number.isNaN(date) && date >= 20220319) {
+      return true;
+    }
+  } else if (process.env["KONSOLE_VERSION"]) {
+    // Konsole supports iTerm2 inline images since some time around 2022
+    // See https://www.reddit.com/r/kde/comments/ul0irg/konsole_2204_with_sixel_support_is_out_of_beta_now/
+    const version = process.env["KONSOLE_VERSION"];
+    if (!version) return false;
+    const date = parseInt(version);
+    if (!Number.isNaN(date) && date >= 220400) {
+      return true;
+    }
+  } else if (process.env["TERM_PROGRAM"] === "rio") {
+    // Rio terminal supports iTerm2 inline images since version 0.1.13
+    // See https://github.com/raphamorim/rio/releases/tag/v0.1.13
+    const version = process.env["TERM_PROGRAM_VERSION"];
+    if (!version) return false;
+    const [major, minor, patch] = version
+      .split(".")
+      .map((v) => parseInt(v, 10));
+    if (
+      !Number.isNaN(major) &&
+      !Number.isNaN(minor) &&
+      !Number.isNaN(patch) &&
+      (major > 0 ||
+        (major === 0 && minor > 1) ||
+        (major === 0 && minor === 1 && patch >= 13))
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
  * Terminal dimensions in pixels and character cells.
@@ -29,10 +75,7 @@ export interface TerminalCapabilities {
   supportsSixelGraphics: boolean;
   /** Whether the terminal supports Kitty graphics protocol */
   supportsKittyGraphics: boolean;
-  /**
-   * Whether the terminal supports iTerm2 inline images
-   * @deprecated This is NOT implemented yet
-   */
+  /** Whether the terminal supports iTerm2 inline images */
   supportsITerm2Graphics: boolean;
 }
 
@@ -68,7 +111,7 @@ export const TerminalInfoContext = createContext<TerminalInfo | undefined>(
  * 1. Queries terminal dimensions using escape sequences
  * 2. Detects Unicode support using environment checks
  * 3. Detects color support using environment checks
- * 4. Tests graphics protocol support (Kitty, Sixel)
+ * 4. Tests graphics protocol support (Sixel, Kitty, iTerm2)
  * 5. Provides complete terminal information to child components
  *
  * **Required for:**
@@ -162,13 +205,14 @@ export const TerminalInfoProvider = ({
       ) {
         supportsSixelGraphics = true;
       }
+      const supportsITerm2Graphics = supportsITerm2();
 
       const capabilities: TerminalCapabilities = {
         supportsUnicode,
         supportsColor: isColorSupported,
         supportsKittyGraphics,
         supportsSixelGraphics,
-        supportsITerm2Graphics: false, // TODO
+        supportsITerm2Graphics,
       };
 
       setTerminalInfo({
