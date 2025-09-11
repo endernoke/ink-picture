@@ -2,7 +2,7 @@
 
 Better image component for [Ink](https://github.com/vadimdemedes/ink) CLI/TUI applications.
 
-Display images in your terminal with automatic protocol detection and graceful fallbacks. Supports ASCII, Braille patterns, Unicode half-blocks, and Sixel graphics.
+Display images in your terminal with automatic protocol detection and graceful fallbacks. Supports ASCII, Braille patterns, Unicode half-blocks, Sixel graphics, and iTerm2 inline images.
 
 <img width="1919" height="765" alt="Screenshot 2025-09-07 160615" src="https://github.com/user-attachments/assets/0be5be69-043a-446a-aa8a-7d138919113c" />
 
@@ -58,7 +58,7 @@ Main component with automatic protocol detection and fallback.
 - `width?` (number) - Width in terminal cells
 - `height?` (number) - Height in terminal cells
 - `alt?` (string) - Alternative text for loading/error states
-- `protocol?` (string) - Force specific protocol: `"ascii"`, `"braille"`, `"halfBlock"`, `"sixel"` (`sixel` is experimental, see [Important Notes](#important-notes--caveats))
+- `protocol?` (string) - Force specific protocol: `"ascii" | "braille" | "halfBlock" | "sixel" | "iterm2"` (`sixel` and `iterm2` are experimental, see [Important Notes](#important-notes--caveats))
 
 #### Protocols
 
@@ -68,6 +68,7 @@ The component automatically selects the best available protocol:
 2. **Braille** (`braille`) - High-resolution monochrome using Braille patterns. Requires Unicode support.
 3. **ASCII** (`ascii`) - Character-based art. Works in all terminals (fallback).
 4. **Sixel** (`sixel`) - True color bitmap graphics. Requires Sixel support (experimental).
+5. **iTerm2** (`iterm2`) - True color images in iTerm2-compatible terminals (experimental).
 
 ### `<TerminalInfoProvider>`
 
@@ -87,6 +88,7 @@ import {
   BrailleImage,
   HalfBlockImage,
   SixelImage,
+  Iterm2Image,
 } from "ink-picture";
 ```
 
@@ -98,11 +100,11 @@ import {
 
 ## Important Notes & Caveats
 
-### Sixel Renderer (Experimental)
+### Sixel and iTerm2 Renderers (Experimental)
 
-The Sixel renderer provides the highest quality but comes with important limitations:
+The Sixel and iTerm2 renderers provide the highest quality but come with important limitations:
 
-⚠️ **Experimental Warning:** The Sixel component bypasses React/Ink's normal rendering pipeline and writes directly to the terminal. You may experience:
+⚠️ **Experimental Warning:** These components bypasses React/Ink's normal rendering pipeline and writes directly to the terminal. You may experience:
 
 - Rendering flicker during updates
 - Cursor positioning issues
