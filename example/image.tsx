@@ -65,6 +65,18 @@ const protocols: ProtocolConfig[] = [
         : "No Sixel support detected",
     }),
   },
+  {
+    name: "iTerm2 Inline Images",
+    protocol: "iterm2",
+    description: "True color bitmap (proprietary)",
+    requirements: "iTerm2 or compatible terminal",
+    getSupportStatus: (caps) => ({
+      supported: caps?.supportsITerm2Graphics,
+      reason: caps?.supportsITerm2Graphics
+        ? "Fully supported"
+        : "No iTerm2 graphics support detected",
+    }),
+  },
 ];
 
 function ProtocolDemo({ config }: { config: ProtocolConfig }) {
@@ -132,10 +144,17 @@ function ProtocolShowcase() {
           <Text dimColor>Press Ctrl+C to exit</Text>
         </Box>
 
-        <Box flexDirection="row">
-          {protocols.map((config) => (
-            <ProtocolDemo key={config.protocol} config={config} />
-          ))}
+        <Box flexDirection="column" marginBottom={1}>
+          <Box flexDirection="row">
+            {protocols.slice(0, 3).map((config) => (
+              <ProtocolDemo key={config.protocol} config={config} />
+            ))}
+          </Box>
+          <Box flexDirection="row">
+            {protocols.slice(3).map((config) => (
+              <ProtocolDemo key={config.protocol} config={config} />
+            ))}
+          </Box>
         </Box>
 
         <Box marginTop={2} borderStyle="single" borderColor="gray">
