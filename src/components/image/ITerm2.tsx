@@ -8,7 +8,6 @@ import {
   useTerminalCapabilities,
 } from "../../context/TerminalInfo.js";
 import { type ImageProps } from "./protocol.js";
-import sharp from "sharp";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
 
 /**
