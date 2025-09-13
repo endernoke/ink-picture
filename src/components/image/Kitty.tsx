@@ -123,19 +123,31 @@ function KittyImage(props: ImageProps) {
       });
 
       try {
-        const tmpImageFile = tmp.fileSync({
-          prefix: "ink-picture.tty-graphics-protocol.",
-          postfix: ".png",
-        });
-        await resizedImage.png().toFile(tmpImageFile.name);
-
-        // Transfer pixel data to terminal
         const imageId = generateKittyId();
-        // f=100: transmit png data; t=t: transmission medium is temporary file (terminal deletes after reading)
-        // i=image-id; q=2: suppress terminal response (don't write to stdin)
+
+        const data = await resizedImage.png().toBuffer();
+        const chunkSize = 4096; // Kitty protocol pixel data max chunk size
+        const base64Data = data.toString("base64");
+
+        const firstChunk = base64Data.slice(0, chunkSize);
+        // f=100: transmit png data; t=d: direct transfer; i=image-id;
+        // m=1: more chunks follow; q=2: suppress terminal response
         stdout.write(
-          `\x1b_Gf=100,t=t,i=${imageId},q=2;${Buffer.from(tmpImageFile.name).toString("base64")}\x1b\\`,
+          `\x1b_Gf=100,t=d,i=${imageId},m=1,q=2;${firstChunk}\x1b\\`,
         );
+        let bufferOffset = chunkSize;
+        while (bufferOffset < base64Data.length - chunkSize) {
+          const chunk = base64Data.slice(
+            bufferOffset,
+            bufferOffset + chunkSize,
+          );
+          bufferOffset += chunkSize;
+          stdout.write(`\x1b_Gm=1,q=2;${chunk}\x1b\\`);
+        }
+        const lastChunk = base64Data.slice(bufferOffset);
+        stdout.write(`\x1b_Gm=0,q=2;${lastChunk}\x1b\\`);
+
+        // Set image ID only after all data are sent
         setImageId(imageId);
       } catch {
         setHasError(true);
