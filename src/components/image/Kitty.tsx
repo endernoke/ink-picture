@@ -7,12 +7,9 @@ import {
   useTerminalCapabilities,
 } from "../../context/TerminalInfo.js";
 import { type ImageProps } from "./protocol.js";
-import sharp from "sharp";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import generateKittyId from "../../utils/generateKittyId.js";
 import tmp from "tmp";
-import { image } from "ansi-escapes";
-import fs from "fs";
 
 /**
  * Kitty Image Rendering Component
@@ -31,7 +28,8 @@ import fs from "fs";
  * - Uses the Kitty graphics protocol
  * - Renders directly to terminal using escape sequences
  * - Bypasses Ink's normal rendering pipeline for control over image position
- * - Requires careful cursor management and cleanup
+ * - Requires careful cursor management
+ * - More performant cleanup logic than sixel and iTerm2
  *
  * **EXPERIMENTAL COMPONENT WARNING:**
  * This component does not follow React/Ink's normal rendering lifecycle.
@@ -85,9 +83,7 @@ function KittyImage(props: ImageProps) {
    * 1. Fetches and processes the source image
    * 2. Calculates appropriate sizing based on terminal dimensions
    * 3. Resizes image to fit within the component's allocated space
-   * 4. Ensures alpha channel is present (required by node-kitty)
-   * 5. Converts processed image data to Kitty format
-   * 6. Tracks actual size in terminal cells for cleanup purposes
+   * 4. Transfers image data to the terminal using Kitty protocol
    */
   useEffect(() => {
     const generateImageOutput = async () => {
@@ -135,6 +131,8 @@ function KittyImage(props: ImageProps) {
 
         // Transfer pixel data to terminal
         const imageId = generateKittyId();
+        // f=100: transmit png data; t=t: transmission medium is temporary file (terminal deletes after reading)
+        // i=image-id; q=2: suppress terminal response (don't write to stdin)
         stdout.write(
           `\x1b_Gf=100,t=t,i=${imageId},q=2;${Buffer.from(tmpImageFile.name).toString("base64")}\x1b\\`,
         );
@@ -163,12 +161,9 @@ function KittyImage(props: ImageProps) {
    *
    * Process:
    * 1. Validates that image and position data are available
-   * 2. Checks if the image would be visible within terminal bounds
-   * 3. Sets up process exit handlers for cleanup
-   * 4. Positions cursor to the correct location
-   * 5. Writes Kitty data directly to stdout
-   * 6. Restores cursor position
-   * 7. Returns cleanup function for previous render cleanup
+   * 2. Positions cursor to the correct location
+   * 3. Tells terminal to display the Kitty image at that position
+   * 4. Restores cursor position
    *
    * Cursor Management:
    * - Moves cursor up to component position
@@ -176,32 +171,30 @@ function KittyImage(props: ImageProps) {
    * - Writes image data
    * - Moves cursor back down to original position
    *
-   * Cleanup Strategy:
-   * - Tracks previous render bounding box
-   * - Clears previous image by writing spaces
-   * - Handles process exit gracefully
-   *
    * TODO: This may change when Ink implements incremental rendering
    */
   useEffect(() => {
     if (!imageId) return;
     if (!componentPosition) return;
 
+    // NOTE: technically we don't need to save/restore cursor position
+    // assuming that the terminal implements the kitty protocol correctly
+    // but some terminals do not respect the 'C=1' parameter
+    stdout.write("\x1b7"); // Save cursor position
     stdout.write(cursorUp(componentPosition.appHeight - componentPosition.row));
     stdout.write("\r");
     stdout.write(cursorForward(componentPosition.col));
 
     const placementId = 1; // We only have one image per component instance
+    // a=p: place image; i=image-id; p=placement-id; C=1: do not move cursor;
+    // q=2: supress terminal response (don't write to stdin)
     stdout.write(`\x1b_Ga=p,i=${imageId},p=${placementId},C=1,q=2\x1b\\`);
 
-    stdout.write(
-      cursorDown(componentPosition.appHeight - componentPosition.row),
-    );
-    stdout.write("\r");
+    stdout.write("\x1b8"); // Restore cursor position
 
-    // We do not clean up on rerenders
-    // because kitty manages replacing
-    // images with the same placement ID
+    // We do not clean up on rerenders because
+    // kitty manages replacing images with the
+    // same image id and placement ID without any flicker
   });
 
   // Cleanup effect to remove Kitty image on unmount or image change only
@@ -210,6 +203,7 @@ function KittyImage(props: ImageProps) {
       if (!imageId) return;
       if (!shouldCleanupRef.current) return;
 
+      // a=d: delete image; d=I: remove image data from storage; i=image-id
       stdout.write(`\x1b_Ga=d,d=I,i=${imageId}\x1b\\`);
     };
   }, [imageId, stdout]);
