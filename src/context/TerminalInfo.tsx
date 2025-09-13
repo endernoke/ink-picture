@@ -162,7 +162,7 @@ export const TerminalInfoProvider = ({
       // example format: "\x1b[4;1012;1419t"
       const parsedResponse =
         // eslint-disable-next-line no-control-regex
-        pixelDimensionsResponse.match(/\x1b\[4;(\d+);(\d+)t/);
+        pixelDimensionsResponse.match(/\x1b\[4;(\d+);(\d+);?t/);
       if (!parsedResponse || !parsedResponse[1] || !parsedResponse[2]) {
         throw new Error("Failed to determine terminal size.");
       }
