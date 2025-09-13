@@ -135,7 +135,8 @@ function SixelImage(props: ImageProps) {
     props.src,
     props.width,
     props.height,
-    componentPosition,
+    componentPosition?.width,
+    componentPosition?.height,
     terminalDimensions,
   ]);
 
@@ -192,16 +193,14 @@ function SixelImage(props: ImageProps) {
       | { row: number; col: number; width: number; height: number }
       | undefined = undefined;
     const renderTimeout = setTimeout(() => {
+      stdout.write("\x1b7"); // Save cursor position
       stdout.write(
         cursorUp(componentPosition.appHeight - componentPosition.row),
       );
       stdout.write("\r");
       stdout.write(cursorForward(componentPosition.col));
       stdout.write(imageOutput);
-      stdout.write(
-        cursorDown(componentPosition.appHeight - componentPosition.row),
-      );
-      stdout.write("\r");
+      stdout.write("\x1b8"); // Restore cursor position
 
       previousRenderBoundingBox = {
         row: stdout.rows - componentPosition.appHeight + componentPosition.row,
@@ -221,6 +220,7 @@ function SixelImage(props: ImageProps) {
       // If we never rendered the image, nothing to clean up
       if (!previousRenderBoundingBox) return;
 
+      stdout.write("\x1b7"); // Save cursor position
       stdout.write(
         cursorUp(componentPosition.appHeight - componentPosition.row),
       );
@@ -237,15 +237,7 @@ function SixelImage(props: ImageProps) {
         stdout.write("\n");
         // }
       }
-      // Restore cursor position
-      stdout.write(
-        cursorDown(
-          componentPosition.appHeight -
-            componentPosition.row -
-            previousRenderBoundingBox.height,
-        ),
-      );
-      stdout.write("\r");
+      stdout.write("\x1b8"); // Restore cursor position
     };
     // }, [imageOutput, ...Object.values(componentPosition)]);
   });

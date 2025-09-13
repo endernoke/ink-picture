@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, Text, Newline, useStdout, type DOMElement } from "ink";
 // import { backgroundContext } from "ink";
-import AnsiEscapes from "ansi-escapes";
 import usePosition from "../../hooks/usePosition.js";
 import {
   useTerminalDimensions,
@@ -9,12 +8,14 @@ import {
 } from "../../context/TerminalInfo.js";
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
+import generateKittyId from "../../utils/generateKittyId.js";
+import tmp from "tmp";
 
 /**
- * ITerm2 Image Rendering Component
+ * Kitty Image Rendering Component
  *
- * Displays images using the ITerm2 graphics protocol, providing the highest quality
- * image rendering in supported terminals. ITerm2 is a bitmap graphics format that
+ * Displays images using the Kitty terminal graphics protocol, providing the highest quality
+ * image rendering in supported terminals. Kitty is a bitmap graphics format that
  * can display true color images at full resolution.
  *
  * Features:
@@ -24,10 +25,11 @@ import { fetchImage, calculateImageSize } from "../../utils/image.js";
  * - Direct pixel-to-pixel rendering
  *
  * Technical Details:
- * - Uses the ITerm2 graphics protocol
+ * - Uses the Kitty graphics protocol
  * - Renders directly to terminal using escape sequences
  * - Bypasses Ink's normal rendering pipeline for control over image position
- * - Requires careful cursor management and cleanup
+ * - Requires careful cursor management
+ * - More performant cleanup logic than sixel and iTerm2
  *
  * **EXPERIMENTAL COMPONENT WARNING:**
  * This component does not follow React/Ink's normal rendering lifecycle.
@@ -39,17 +41,17 @@ import { fetchImage, calculateImageSize } from "../../utils/image.js";
  *
  * How it works:
  * 1. A Box component reserves space in the layout
- * 2. Image is fetched and converted to ITerm2 format
+ * 2. Image is fetched and converted to Kitty format
  * 3. useEffect hook renders image directly to terminal after each Ink render
  * 4. Previous image is cleared before rendering new content
  * 5. Cleanup occurs on component unmount or re-render
  * 6. Cleanup will not be performed when application terminates (so the rendered image is preserved in its location)
  *
  * @param props - Image rendering properties
- * @returns JSX element that manages ITerm2 image display
+ * @returns JSX element that manages Kitty image display
  */
-function ITerm2Image(props: ImageProps) {
-  const [imageOutput, setImageOutput] = useState<string | undefined>(undefined);
+function KittyImage(props: ImageProps) {
+  const [imageId, setImageId] = useState<number | undefined>(undefined);
   const [hasError, setHasError] = useState<boolean>(false);
   const { stdout } = useStdout();
   const containerRef = useRef<DOMElement | null>(null);
@@ -66,8 +68,8 @@ function ITerm2Image(props: ImageProps) {
   useEffect(() => {
     if (!terminalCapabilities) return;
 
-    // ITerm2 rendering requires explicit iTerm2 graphics support
-    const isSupported = terminalCapabilities.supportsITerm2Graphics;
+    // Kitty rendering requires explicit kitty graphics support
+    const isSupported = terminalCapabilities.supportsKittyGraphics;
     props.onSupportDetected?.(isSupported);
   }, [terminalCapabilities, props.onSupportDetected]);
 
@@ -75,15 +77,13 @@ function ITerm2Image(props: ImageProps) {
   // const inheritedBackgroundColor = useContext(backgroundContext);
 
   /**
-   * Main effect for image processing and ITerm2 conversion.
+   * Main effect for image processing and Kitty conversion.
    *
    * This effect:
    * 1. Fetches and processes the source image
    * 2. Calculates appropriate sizing based on terminal dimensions
    * 3. Resizes image to fit within the component's allocated space
-   * 4. Ensures alpha channel is present (required by node-iTerm2)
-   * 5. Converts processed image data to ITerm2 format
-   * 6. Tracks actual size in terminal cells for cleanup purposes
+   * 4. Transfers image data to the terminal using Kitty protocol
    */
   useEffect(() => {
     const generateImageOutput = async () => {
@@ -112,22 +112,47 @@ function ITerm2Image(props: ImageProps) {
           : undefined,
       });
 
-      const resizedImage = await image
-        .resize(width, height)
-        .ensureAlpha() // node-iTerm2 requires alpha channel to be present
-        .png() // iTerm2 expects a FILE, not raw pixel data
-        .toBuffer({ resolveWithObject: true });
+      const resizedImage = image.resize(width, height);
+      const resizedMetadata = await resizedImage.metadata();
+
       setActualSizeInCells({
-        width: Math.floor(
-          resizedImage.info.width / terminalDimensions.cellWidth,
-        ),
+        width: Math.floor(resizedMetadata.width / terminalDimensions.cellWidth),
         height: Math.floor(
-          resizedImage.info.height / terminalDimensions.cellHeight,
+          resizedMetadata.height / terminalDimensions.cellHeight,
         ),
       });
 
-      const output = toITerm2(resizedImage);
-      setImageOutput(output);
+      try {
+        const imageId = generateKittyId();
+
+        const data = await resizedImage.png().toBuffer();
+        const chunkSize = 4096; // Kitty protocol pixel data max chunk size
+        const base64Data = data.toString("base64");
+
+        const firstChunk = base64Data.slice(0, chunkSize);
+        // f=100: transmit png data; t=d: direct transfer; i=image-id;
+        // m=1: more chunks follow; q=2: suppress terminal response
+        stdout.write(
+          `\x1b_Gf=100,t=d,i=${imageId},m=1,q=2;${firstChunk}\x1b\\`,
+        );
+        let bufferOffset = chunkSize;
+        while (bufferOffset < base64Data.length - chunkSize) {
+          const chunk = base64Data.slice(
+            bufferOffset,
+            bufferOffset + chunkSize,
+          );
+          bufferOffset += chunkSize;
+          stdout.write(`\x1b_Gm=1,q=2;${chunk}\x1b\\`);
+        }
+        const lastChunk = base64Data.slice(bufferOffset);
+        stdout.write(`\x1b_Gm=0,q=2;${lastChunk}\x1b\\`);
+
+        // Set image ID only after all data are sent
+        setImageId(imageId);
+      } catch {
+        setHasError(true);
+        return;
+      }
     };
     generateImageOutput();
   }, [
@@ -140,20 +165,17 @@ function ITerm2Image(props: ImageProps) {
   ]);
 
   /**
-   * Critical rendering effect for ITerm2 image display.
+   * Critical rendering effect for Kitty image display.
    *
-   * This effect runs after every re-render to display the ITerm2 image because
+   * This effect runs after every re-render to display the Kitty image because
    * Ink overwrites the terminal content with each render cycle. This is a
    * necessary workaround for the current Ink architecture.
    *
    * Process:
    * 1. Validates that image and position data are available
-   * 2. Checks if the image would be visible within terminal bounds
-   * 3. Sets up process exit handlers for cleanup
-   * 4. Positions cursor to the correct location
-   * 5. Writes ITerm2 data directly to stdout
-   * 6. Restores cursor position
-   * 7. Returns cleanup function for previous render cleanup
+   * 2. Positions cursor to the correct location
+   * 3. Tells terminal to display the Kitty image at that position
+   * 4. Restores cursor position
    *
    * Cursor Management:
    * - Moves cursor up to component position
@@ -161,89 +183,46 @@ function ITerm2Image(props: ImageProps) {
    * - Writes image data
    * - Moves cursor back down to original position
    *
-   * Cleanup Strategy:
-   * - Tracks previous render bounding box
-   * - Clears previous image by writing spaces
-   * - Handles process exit gracefully
-   *
    * TODO: This may change when Ink implements incremental rendering
    */
   useEffect(() => {
-    if (!imageOutput) return;
+    if (!imageId) return;
     if (!componentPosition) return;
-    if (
-      stdout.rows - componentPosition.appHeight + componentPosition.row < 0 ||
-      componentPosition.col > stdout.columns
-    )
-      return;
 
-    function onExit() {
-      shouldCleanupRef.current = false;
-    }
-    function onSigInt() {
-      shouldCleanupRef.current = false;
-      process.exit();
-    }
-    process.on("exit", onExit);
-    process.on("SIGINT", onSigInt);
-    process.on("SIGTERM", onSigInt);
+    // NOTE: technically we don't need to save/restore cursor position
+    // assuming that the terminal implements the kitty protocol correctly
+    // but some terminals do not respect the 'C=1' parameter
+    stdout.write("\x1b7"); // Save cursor position
+    stdout.write(cursorUp(componentPosition.appHeight - componentPosition.row));
+    stdout.write("\r");
+    stdout.write(cursorForward(componentPosition.col));
 
-    let previousRenderBoundingBox:
-      | { row: number; col: number; width: number; height: number }
-      | undefined = undefined;
-    const renderTimeout = setTimeout(() => {
-      stdout.write("\x1b7"); // Save cursor position
-      stdout.write(
-        cursorUp(componentPosition.appHeight - componentPosition.row),
-      );
-      stdout.write("\r");
-      stdout.write(cursorForward(componentPosition.col));
-      stdout.write(imageOutput);
-      stdout.write("\x1b8"); // Restore cursor position
+    const placementId = 1; // We only have one image per component instance
+    // a=p: place image; i=image-id; p=placement-id; C=1: do not move cursor;
+    // q=2: supress terminal response (don't write to stdin)
+    stdout.write(`\x1b_Ga=p,i=${imageId},p=${placementId},C=1,q=2\x1b\\`);
 
-      previousRenderBoundingBox = {
-        row: stdout.rows - componentPosition.appHeight + componentPosition.row,
-        col: componentPosition.col,
-        width: actualSizeInCells!.width,
-        height: actualSizeInCells!.height,
-      };
-    }, 50); // Delay to allow Ink/terminal to finish its render
+    stdout.write("\x1b8"); // Restore cursor position
 
-    return () => {
-      process.removeListener("exit", onExit);
-      process.removeListener("SIGINT", onSigInt);
-      process.removeListener("SIGTERM", onSigInt);
-
-      if (!shouldCleanupRef.current) return;
-      clearTimeout(renderTimeout);
-      // If we never rendered the image, nothing to clean up
-      if (!previousRenderBoundingBox) return;
-
-      stdout.write("\x1b7"); // Save cursor position
-      stdout.write(
-        cursorUp(componentPosition.appHeight - componentPosition.row),
-      );
-      for (let i = 0; i < previousRenderBoundingBox.height; i++) {
-        stdout.write("\r");
-        stdout.write(cursorForward(previousRenderBoundingBox.col));
-        // if (inheritedBackgroundColor) {
-        //   const bgColor = "bg" + toProper(inheritedBackgroundColor);
-        //   stdout.write(
-        //     chalk[bgColor](" ".repeat(previousRenderBoundingBox.width) + "\n"),
-        //   );
-        // } else {
-        stdout.write(" ".repeat(previousRenderBoundingBox.width));
-        stdout.write("\n");
-        // }
-      }
-      stdout.write("\x1b8"); // Restore cursor position
-    };
-    // }, [imageOutput, ...Object.values(componentPosition)]);
+    // We do not clean up on rerenders because
+    // kitty manages replacing images with the
+    // same image id and placement ID without any flicker
   });
+
+  // Cleanup effect to remove Kitty image on unmount or image change only
+  useEffect(() => {
+    return () => {
+      if (!imageId) return;
+      if (!shouldCleanupRef.current) return;
+
+      // a=d: delete image; d=I: remove image data from storage; i=image-id
+      stdout.write(`\x1b_Ga=d,d=I,i=${imageId}\x1b\\`);
+    };
+  }, [imageId, stdout]);
 
   return (
     <Box ref={containerRef} flexDirection="column" flexGrow={1}>
-      {imageOutput ? (
+      {imageId ? (
         <Text color="gray" wrap="wrap">
           {props.alt || "Loading..."}
         </Text>
@@ -260,24 +239,6 @@ function ITerm2Image(props: ImageProps) {
       )}
     </Box>
   );
-}
-
-/**
- * Converts processed image data to ITerm2 format.
- *
- * This function takes raw RGBA image data from Sharp and converts it to
- * the ITerm2 graphics format using the node-iTerm2 library. The resulting
- * string contains escape sequences that can be written directly to a
- * terminal that supports ITerm2 graphics.
- *
- * @param imageData - Raw image data with buffer and metadata from Sharp
- * @returns ITerm2-formatted string
- */
-function toITerm2(imageData: { data: Buffer }) {
-  const { data } = imageData;
-
-  const iTerm2Data = AnsiEscapes.image(data);
-  return iTerm2Data;
 }
 
 /**
@@ -307,4 +268,4 @@ function cursorDown(count: number = 1) {
   return "\x1b[" + count + "B";
 }
 
-export default ITerm2Image;
+export default KittyImage;
