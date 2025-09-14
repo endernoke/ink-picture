@@ -3,7 +3,6 @@ import queryEscapeSequence from "../utils/queryEscapeSequence.js";
 import supportsColor from "supports-color";
 import checkIsUnicodeSupported from "is-unicode-supported";
 import iterm2Version from "iterm2-version";
-import { get } from "http";
 
 function supportsITerm2() {
   if (process.env["TERM_PROGRAM"] === "iTerm.app") {

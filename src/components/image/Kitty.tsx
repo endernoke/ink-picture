@@ -9,7 +9,6 @@ import {
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import generateKittyId from "../../utils/generateKittyId.js";
-import tmp from "tmp";
 
 /**
  * Kitty Image Rendering Component
@@ -58,11 +57,6 @@ function KittyImage(props: ImageProps) {
   const componentPosition = usePosition(containerRef);
   const terminalDimensions = useTerminalDimensions();
   const terminalCapabilities = useTerminalCapabilities();
-  const [actualSizeInCells, setActualSizeInCells] = useState<{
-    width: number;
-    height: number;
-  } | null>(null);
-  const shouldCleanupRef = useRef<boolean>(true);
 
   // Detect support and notify parent
   useEffect(() => {
@@ -113,14 +107,6 @@ function KittyImage(props: ImageProps) {
       });
 
       const resizedImage = image.resize(width, height);
-      const resizedMetadata = await resizedImage.metadata();
-
-      setActualSizeInCells({
-        width: Math.ceil(resizedMetadata.width / terminalDimensions.cellWidth),
-        height: Math.ceil(
-          resizedMetadata.height / terminalDimensions.cellHeight,
-        ),
-      });
 
       try {
         const imageId = generateKittyId();
@@ -213,7 +199,6 @@ function KittyImage(props: ImageProps) {
   useEffect(() => {
     return () => {
       if (!imageId) return;
-      if (!shouldCleanupRef.current) return;
 
       // a=d: delete image; d=I: remove image data from storage; i=image-id
       stdout.write(`\x1b_Ga=d,d=I,i=${imageId}\x1b\\`);
@@ -257,15 +242,6 @@ function cursorForward(count: number = 1) {
  */
 function cursorUp(count: number = 1) {
   return "\x1b[" + count + "A";
-}
-
-/**
- * Moves cursor down by specified number of rows.
- * @param count - Number of rows to move down (default: 1)
- * @returns ANSI escape sequence string
- */
-function cursorDown(count: number = 1) {
-  return "\x1b[" + count + "B";
 }
 
 export default KittyImage;

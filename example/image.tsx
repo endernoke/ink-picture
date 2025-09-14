@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "../src/components/image/index.js";
-import { Text, Box, render, useInput } from "ink";
+import { Text, Box, render, useInput, useApp } from "ink";
 import {
   TerminalInfoProvider,
   useTerminalCapabilities,
@@ -140,9 +140,10 @@ function ProtocolDemo({ config }: { config: ProtocolConfig }) {
 }
 
 function ProtocolShowcase() {
+  const { exit } = useApp();
   useInput((input, key) => {
     if (key.ctrl && input === "c") {
-      process.exit();
+      exit();
     }
   });
 

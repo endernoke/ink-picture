@@ -301,13 +301,4 @@ function cursorUp(count: number = 1) {
   return "\x1b[" + count + "A";
 }
 
-/**
- * Moves cursor down by specified number of rows.
- * @param count - Number of rows to move down (default: 1)
- * @returns ANSI escape sequence string
- */
-function cursorDown(count: number = 1) {
-  return "\x1b[" + count + "B";
-}
-
 export default SixelImage;
