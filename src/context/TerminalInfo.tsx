@@ -3,6 +3,7 @@ import queryEscapeSequence from "../utils/queryEscapeSequence.js";
 import supportsColor from "supports-color";
 import checkIsUnicodeSupported from "is-unicode-supported";
 import iterm2Version from "iterm2-version";
+import { get } from "http";
 
 function supportsITerm2() {
   if (process.env["TERM_PROGRAM"] === "iTerm.app") {
@@ -151,31 +152,70 @@ export const TerminalInfoProvider = ({
     undefined,
   );
 
-  useEffect(() => {
-    const queryTerminalInfo = async () => {
-      // Terminal dimensions in pixels
-      const pixelDimensionsResponse = await queryEscapeSequence("\x1b[14t");
-      if (!pixelDimensionsResponse) {
-        // TODO: add fallback to default values
-        throw new Error("Failed to determine terminal size in pixels.");
+  async function getCellPixelDimensions(): Promise<
+    { width: number; height: number } | undefined
+  > {
+    try {
+      const cellPixelDimensionsResponse = await queryEscapeSequence("\x1b[16t");
+      if (!cellPixelDimensionsResponse) {
+        throw new Error();
       }
       // example format: "\x1b[4;1012;1419t"
       const parsedResponse =
         // eslint-disable-next-line no-control-regex
-        pixelDimensionsResponse.match(/\x1b\[4;(\d+);(\d+);?t/);
+        cellPixelDimensionsResponse.match(/\x1b\[6;(\d+);(\d+);?t/);
       if (!parsedResponse || !parsedResponse[1] || !parsedResponse[2]) {
-        throw new Error("Failed to determine terminal size.");
+        throw new Error();
       }
       const height = parseInt(parsedResponse[1], 10);
       const width = parseInt(parsedResponse[2], 10);
       if (Number.isNaN(height) || Number.isNaN(width)) {
-        throw new Error("Failed to determine terminal size.");
+        throw new Error();
+      }
+      return {
+        width,
+        height,
+      };
+    } catch {
+      const terminalPixelDimensionsResponse =
+        await queryEscapeSequence("\x1b[14t");
+      if (!terminalPixelDimensionsResponse) {
+        return undefined;
+      }
+      // example format: "\x1b[4;1012;1419t"
+      const parsedResponse =
+        // eslint-disable-next-line no-control-regex
+        terminalPixelDimensionsResponse.match(/\x1b\[4;(\d+);(\d+);?t/);
+      if (!parsedResponse || !parsedResponse[1] || !parsedResponse[2]) {
+        return undefined;
+      }
+      const height = parseInt(parsedResponse[1], 10);
+      const width = parseInt(parsedResponse[2], 10);
+      if (Number.isNaN(height) || Number.isNaN(width)) {
+        return undefined;
+      }
+      return {
+        width: width / process.stdout.columns,
+        height: height / process.stdout.rows,
+      };
+    }
+  }
+
+  useEffect(() => {
+    const queryTerminalInfo = async () => {
+      // Terminal dimensions in pixels
+      let cellDimensions = await getCellPixelDimensions();
+      if (!cellDimensions) {
+        cellDimensions = {
+          width: 6,
+          height: 12,
+        };
       }
       const dimensions: TerminalDimensions = {
-        viewportWidth: width,
-        viewportHeight: height,
-        cellWidth: width / process.stdout.columns,
-        cellHeight: height / process.stdout.rows,
+        viewportWidth: cellDimensions.width * process.stdout.columns,
+        viewportHeight: cellDimensions.height * process.stdout.rows,
+        cellWidth: cellDimensions.width,
+        cellHeight: cellDimensions.height,
       };
 
       // Capabilities
