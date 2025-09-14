@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Box, Text, Newline, useStdout, type DOMElement } from "ink";
 // import { backgroundContext } from "ink";
 import AnsiEscapes from "ansi-escapes";
@@ -118,10 +118,10 @@ function ITerm2Image(props: ImageProps) {
         .png() // iTerm2 expects a FILE, not raw pixel data
         .toBuffer({ resolveWithObject: true });
       setActualSizeInCells({
-        width: Math.floor(
+        width: Math.ceil(
           resizedImage.info.width / terminalDimensions.cellWidth,
         ),
-        height: Math.floor(
+        height: Math.ceil(
           resizedImage.info.height / terminalDimensions.cellHeight,
         ),
       });
@@ -168,7 +168,7 @@ function ITerm2Image(props: ImageProps) {
    *
    * TODO: This may change when Ink implements incremental rendering
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!imageOutput) return;
     if (!componentPosition) return;
     if (
@@ -207,7 +207,7 @@ function ITerm2Image(props: ImageProps) {
         width: actualSizeInCells!.width,
         height: actualSizeInCells!.height,
       };
-    }, 50); // Delay to allow Ink/terminal to finish its render
+    }, 100); // Delay to allow Ink/terminal to finish its render
 
     return () => {
       process.removeListener("exit", onExit);

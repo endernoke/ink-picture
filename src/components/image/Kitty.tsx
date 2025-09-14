@@ -116,8 +116,8 @@ function KittyImage(props: ImageProps) {
       const resizedMetadata = await resizedImage.metadata();
 
       setActualSizeInCells({
-        width: Math.floor(resizedMetadata.width / terminalDimensions.cellWidth),
-        height: Math.floor(
+        width: Math.ceil(resizedMetadata.width / terminalDimensions.cellWidth),
+        height: Math.ceil(
           resizedMetadata.height / terminalDimensions.cellHeight,
         ),
       });
