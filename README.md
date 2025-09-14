@@ -2,9 +2,13 @@
 
 Better image component for [Ink](https://github.com/vadimdemedes/ink) CLI/TUI applications.
 
-Display images in your terminal with automatic protocol detection and graceful fallbacks. Supports ASCII, Braille patterns, Unicode half-blocks, Sixel graphics, and iTerm2 inline images.
+Display images in your terminal with automatic protocol detection and graceful fallbacks. Supports Sixel, Kitty image protocol, iTerm2 inline images, ASCII art, and more!
 
-<img width="1919" height="765" alt="Screenshot 2025-09-07 160615" src="https://github.com/user-attachments/assets/0be5be69-043a-446a-aa8a-7d138919113c" />
+[![npm](https://img.shields.io/npm/v/ink-picture?style=flat-square)](https://www.npmjs.com/package/ink-picture)
+![MIT License](https://img.shields.io/github/license/endernoke/ink-picture?style=flat-square)
+[![downloads](https://img.shields.io/npm/dm/ink-picture?style=flat-square)](https://www.npmjs.com/package/ink-picture)
+
+<img width="1106" height="519" alt="image" src="https://github.com/user-attachments/assets/caac83df-eb35-4b65-bcb1-0a89e889ea83" />
 
 ## Who's using ink-picture?
 
@@ -58,7 +62,7 @@ Main component with automatic protocol detection and fallback.
 - `width?` (number) - Width in terminal cells
 - `height?` (number) - Height in terminal cells
 - `alt?` (string) - Alternative text for loading/error states
-- `protocol?` (string) - Force specific protocol: `"ascii" | "braille" | "halfBlock" | "sixel" | "iterm2"` (`sixel` and `iterm2` are experimental, see [Important Notes](#important-notes--caveats))
+- `protocol?` (string) - Force specific protocol: `"ascii" | "braille" | "halfBlock" | "sixel" | "iterm2" | "kitty"`
 
 #### Protocols
 
@@ -67,8 +71,9 @@ The component automatically selects the best available protocol:
 1. **Half-block** (`halfBlock`) - Color rendering with Unicode half-blocks (▄). Requires color + Unicode support.
 2. **Braille** (`braille`) - High-resolution monochrome using Braille patterns. Requires Unicode support.
 3. **ASCII** (`ascii`) - Character-based art. Works in all terminals (fallback).
-4. **Sixel** (`sixel`) - True color bitmap graphics. Requires Sixel support (experimental).
-5. **iTerm2** (`iterm2`) - True color images in iTerm2-compatible terminals (experimental).
+4. **Sixel** (`sixel`) - True color bitmap graphics in [Sixel-compatible terminals](https://www.arewesixelyet.com/).
+5. **iTerm2** (`iterm2`) - True color images in terminals that implements the [iTerm2 inline images protocol](https://iterm2.com/documentation-images.html).
+6. **Kitty** (`kitty`) - True color images in terminals that support the [Kitty terminal graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/).
 
 ### `<TerminalInfoProvider>`
 
@@ -100,22 +105,24 @@ import {
 
 ## Important Notes & Caveats
 
-### Sixel and iTerm2 Renderers (Experimental)
+### High quality renderers
 
-The Sixel and iTerm2 renderers provide the highest quality but come with important limitations:
+The Kitty, Sixel, and iTerm2 renderers provide the highest image quality but may not work perfectly in all environments. This is because they rely on hacky side effects to display and clear images.
 
-⚠️ **Experimental Warning:** These components bypasses React/Ink's normal rendering pipeline and writes directly to the terminal. You may experience:
+> [!WARNING]
+> These components bypasses React/Ink's normal rendering pipeline and writes directly to the terminal.
+
+You may experience:
 
 - Rendering flicker during updates
-- Cursor positioning issues
-- Cleanup problems on component unmount
-- Images may be gone after app termination
+- Images may be wiped from the terminal after app termination
+
+These issues are difficult/infeasible to fix and I will not be addressing them in the near future. If you know a solution, please open an issue or PR.
 
 ### General Considerations
 
 - Images are fetched and processed asynchronously
 - Large images are automatically resized to fit terminal constraints
-- Remote images require network access
 - Terminal capability detection happens once per session
 
 ## Examples
@@ -149,6 +156,45 @@ The Sixel and iTerm2 renderers provide the highest quality but come with importa
 </Box>;
 ```
 
+## Choosing the right protocol
+
+> Devs using this library are highly encouraged to provide a configuration option to select the image protocol that works best for their users.
+
+If you use `ink-picture` in your project, feel free to link to this section in your documentation.
+
+Please read if you use a project that uses `ink-picture`.
+
+`ink-picture` should work out-of-the-box in most modern terminal emulators. Yet, not all terminals support all image protocols.
+
+Use the table below as a reference to check which protocol to use for your terminal. You might also want to install a better terminal emulator for best experience.
+
+✅ = Fully supported  
+⚠️ = Partially supported (works but may have issues/caveats)
+❌ = Not supported
+
+| Terminal Emulator | kitty graphics | iTerm2 inline images |
+| ----------------- | -------------- | -------------------- |
+| Kitty             | ✅             | ❌                   |
+| iTerm2            | ❌             | ✅                   |
+| WezTerm           | ✅             | ✅                   |
+| Konsole           | ✅             | ⚠️                   |
+| Ghostty           | ✅             | ❌                   |
+| Warp              | ⚠️             | ❌                   |
+| Rio               | ❌             | ✅                   |
+| Wayst             | ⚠️             | ❌                   |
+
+Please refer to [Are We Sixel Yet?](https://www.arewesixelyet.com/) for a comprehensive list of terminals that support Sixel graphics.
+
+> If your terminal supports any of the above protocols but is not listed here, please open an issue or PR to update the table.
+
+Generally, it is recommended to use the kitty protocol if it is fully supported, as it provides near-perfect performance, without any flickers or artifacts.
+
+Otherwise, the performance of sixel and iterm2 protocols are practically the same, so use whichever your terminal supports.
+
+If not provided with a explicit protocol, `ink-picture` will automatically select the best available protocol from the fallbacks (`halfBlock`, `braille`, `ascii`) based on detected terminal capabilities.
+
+See the [protocols section](#protocols) for more details.
+
 ## Contributing
 
 Contributions are welcome! To contribute:
@@ -160,3 +206,8 @@ Contributions are welcome! To contribute:
 5. Make your changes
 6. Run tests: `npm test`
 7. Open a pull request
+
+## License
+
+MIT License, see [LICENSE](LICENSE).
+)

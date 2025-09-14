@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Box, Text, Newline, useStdout, type DOMElement } from "ink";
 // import { backgroundContext } from "ink";
 import AnsiEscapes from "ansi-escapes";
@@ -118,10 +118,10 @@ function ITerm2Image(props: ImageProps) {
         .png() // iTerm2 expects a FILE, not raw pixel data
         .toBuffer({ resolveWithObject: true });
       setActualSizeInCells({
-        width: Math.floor(
+        width: Math.ceil(
           resizedImage.info.width / terminalDimensions.cellWidth,
         ),
-        height: Math.floor(
+        height: Math.ceil(
           resizedImage.info.height / terminalDimensions.cellHeight,
         ),
       });
@@ -134,7 +134,8 @@ function ITerm2Image(props: ImageProps) {
     props.src,
     props.width,
     props.height,
-    componentPosition,
+    componentPosition?.width,
+    componentPosition?.height,
     terminalDimensions,
   ]);
 
@@ -167,7 +168,7 @@ function ITerm2Image(props: ImageProps) {
    *
    * TODO: This may change when Ink implements incremental rendering
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!imageOutput) return;
     if (!componentPosition) return;
     if (
@@ -191,21 +192,14 @@ function ITerm2Image(props: ImageProps) {
       | { row: number; col: number; width: number; height: number }
       | undefined = undefined;
     const renderTimeout = setTimeout(() => {
+      stdout.write("\x1b7"); // Save cursor position
       stdout.write(
         cursorUp(componentPosition.appHeight - componentPosition.row),
       );
       stdout.write("\r");
       stdout.write(cursorForward(componentPosition.col));
       stdout.write(imageOutput);
-      stdout.write(
-        cursorDown(
-          componentPosition.appHeight -
-            componentPosition.row -
-            (actualSizeInCells?.height ?? 0) +
-            1,
-        ),
-      );
-      stdout.write("\r");
+      stdout.write("\x1b8"); // Restore cursor position
 
       previousRenderBoundingBox = {
         row: stdout.rows - componentPosition.appHeight + componentPosition.row,
@@ -213,7 +207,7 @@ function ITerm2Image(props: ImageProps) {
         width: actualSizeInCells!.width,
         height: actualSizeInCells!.height,
       };
-    }, 50); // Delay to allow Ink/terminal to finish its render
+    }, 100); // Delay to allow Ink/terminal to finish its render
 
     return () => {
       process.removeListener("exit", onExit);
@@ -225,6 +219,7 @@ function ITerm2Image(props: ImageProps) {
       // If we never rendered the image, nothing to clean up
       if (!previousRenderBoundingBox) return;
 
+      stdout.write("\x1b7"); // Save cursor position
       stdout.write(
         cursorUp(componentPosition.appHeight - componentPosition.row),
       );
@@ -241,15 +236,7 @@ function ITerm2Image(props: ImageProps) {
         stdout.write("\n");
         // }
       }
-      // Restore cursor position
-      stdout.write(
-        cursorDown(
-          componentPosition.appHeight -
-            componentPosition.row -
-            previousRenderBoundingBox.height,
-        ),
-      );
-      stdout.write("\r");
+      stdout.write("\x1b8"); // Restore cursor position
     };
     // }, [imageOutput, ...Object.values(componentPosition)]);
   });
@@ -309,15 +296,6 @@ function cursorForward(count: number = 1) {
  */
 function cursorUp(count: number = 1) {
   return "\x1b[" + count + "A";
-}
-
-/**
- * Moves cursor down by specified number of rows.
- * @param count - Number of rows to move down (default: 1)
- * @returns ANSI escape sequence string
- */
-function cursorDown(count: number = 1) {
-  return "\x1b[" + count + "B";
 }
 
 export default ITerm2Image;

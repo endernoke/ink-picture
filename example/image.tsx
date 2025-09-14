@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "../src/components/image/index.js";
-import { Text, Box, render, useInput } from "ink";
+import { Text, Box, render, useInput, useApp } from "ink";
 import {
   TerminalInfoProvider,
   useTerminalCapabilities,
@@ -77,6 +77,18 @@ const protocols: ProtocolConfig[] = [
         : "No iTerm2 graphics support detected",
     }),
   },
+  {
+    name: "Kitty Graphics",
+    protocol: "kitty",
+    description: "True color bitmap (proprietary)",
+    requirements: "Kitty-compatible terminal",
+    getSupportStatus: (caps) => ({
+      supported: caps?.supportsKittyGraphics,
+      reason: caps?.supportsKittyGraphics
+        ? "Fully supported"
+        : "No Kitty graphics support detected",
+    }),
+  },
 ];
 
 function ProtocolDemo({ config }: { config: ProtocolConfig }) {
@@ -128,9 +140,10 @@ function ProtocolDemo({ config }: { config: ProtocolConfig }) {
 }
 
 function ProtocolShowcase() {
+  const { exit } = useApp();
   useInput((input, key) => {
     if (key.ctrl && input === "c") {
-      process.exit();
+      exit();
     }
   });
 
@@ -146,13 +159,13 @@ function ProtocolShowcase() {
 
         <Box flexDirection="column" marginBottom={1}>
           <Box flexDirection="row">
-            {protocols.slice(0, 3).map((config) => (
-              <ProtocolDemo key={config.protocol} config={config} />
+            {protocols.slice(0, 3).map((config, index) => (
+              <ProtocolDemo key={index} config={config} />
             ))}
           </Box>
           <Box flexDirection="row">
-            {protocols.slice(3).map((config) => (
-              <ProtocolDemo key={config.protocol} config={config} />
+            {protocols.slice(3).map((config, index) => (
+              <ProtocolDemo key={index} config={config} />
             ))}
           </Box>
         </Box>
