@@ -4,7 +4,7 @@ import supportsColor from "supports-color";
 import checkIsUnicodeSupported from "is-unicode-supported";
 import iterm2Version from "iterm2-version";
 
-function supportsITerm2() {
+function supportsITerm2(context?: { supportsSixelGraphics: boolean }) {
   if (process.env["TERM_PROGRAM"] === "iTerm.app") {
     const version = iterm2Version();
     if (!version || Number(version[0]) < 3) return false;
@@ -43,6 +43,12 @@ function supportsITerm2() {
         (major === 0 && minor > 1) ||
         (major === 0 && minor === 1 && patch >= 13))
     ) {
+      return true;
+    }
+  } else if (process.env["TERM_PROGRAM"] === "vscode") {
+    // VS Code's integrated terminal can be configured to support Sixel and iTerm2 graphics
+    // If Sixel is supported, iTerm2 images are also supported
+    if (context?.supportsSixelGraphics) {
       return true;
     }
   }
@@ -244,7 +250,7 @@ export const TerminalInfoProvider = ({
       ) {
         supportsSixelGraphics = true;
       }
-      const supportsITerm2Graphics = supportsITerm2();
+      const supportsITerm2Graphics = supportsITerm2({ supportsSixelGraphics });
 
       const capabilities: TerminalCapabilities = {
         supportsUnicode,

@@ -169,23 +169,29 @@ Please read if you use a project that uses `ink-picture`.
 Use the table below as a reference to check which protocol to use for your terminal. You might also want to install a better terminal emulator for best experience.
 
 ✅ = Fully supported  
-⚠️ = Partially supported (works but may have issues/caveats)
+⚠️ = Partially supported (works but may have issues/caveats)  
 ❌ = Not supported
 
-| Terminal Emulator | kitty graphics | iTerm2 inline images |
-| ----------------- | -------------- | -------------------- |
-| Kitty             | ✅             | ❌                   |
-| iTerm2            | ❌             | ✅                   |
-| WezTerm           | ✅             | ✅                   |
-| Konsole           | ✅             | ⚠️                   |
-| Ghostty           | ✅             | ❌                   |
-| Warp              | ⚠️             | ❌                   |
-| Rio               | ❌             | ✅                   |
-| Wayst             | ⚠️             | ❌                   |
+| Terminal Emulator                               | Sixel | kitty graphics | iTerm2 inline images |
+| ----------------------------------------------- | ----- | -------------- | -------------------- |
+| GNOME Terminal                                  | ❌    | ❌             | ❌                   |
+| Ghostty                                         | ❌    | ✅             | ❌                   |
+| iTerm2                                          | ✅    | ❌             | ✅                   |
+| Kitty                                           | ❌    | ✅             | ❌                   |
+| Konsole                                         | ⚠️    | ✅             | ⚠️                   |
+| Rio                                             | ✅    | ❌             | ✅                   |
+| VS Code integrated terminal <br /> (xterm.js)\* | ✅    | ❌             | ✅                   |
+| Warp                                            | ❌    | ⚠️             | ❌                   |
+| Wayst                                           | ❌    | ⚠️             | ❌                   |
+| WezTerm                                         | ✅    | ✅             | ✅                   |
+| Windows Terminal                                | ✅    | ❌             | ❌                   |
+| XTerm                                           | ✅    | ❌             | ❌                   |
 
-Please refer to [Are We Sixel Yet?](https://www.arewesixelyet.com/) for a comprehensive list of terminals that support Sixel graphics.
+Please refer to [Are We Sixel Yet?](https://www.arewesixelyet.com/) for a comprehensive (but slightly out-of-date) list of terminals that support Sixel graphics.
 
-> If your terminal supports any of the above protocols but is not listed here, please open an issue or PR to update the table.
+\* For VS Code, make sure you have the settings `terminal.integrated.enableImages` and `terminal.integrated.gpuAcceleration` enabled, then restart the integrated terminal. If you are on Windows, you might need to follow the on-screen instructions to configure conPTY.
+
+> If you know your terminal supports any of the above protocols but is not listed here, please open an issue or PR to update the table.
 
 Generally, it is recommended to use the kitty protocol if it is fully supported, as it provides near-perfect performance, without any flickers or artifacts.
 
