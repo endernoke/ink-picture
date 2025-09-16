@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { type ImageProps, type ImageProtocol } from "./protocol.js";
+import { type ImageProps } from "./protocol.js";
 import AsciiImage from "./Ascii.js";
 import HalfBlockImage from "./HalfBlock.js";
 import BrailleImage from "./Braille.js";
@@ -7,63 +7,16 @@ import SixelImage from "./Sixel.js";
 import ITerm2Image from "./ITerm2.js";
 import KittyImage from "./Kitty.js";
 
-/**
- * Creates a registry for managing image rendering protocols.
- *
- * The registry allows registration and retrieval of different image rendering
- * protocols such as ASCII, Braille, Half-block, and Sixel.
- *
- * @returns An object with methods to register and retrieve protocols
- */
-const createProtocolRegistry = () => {
-  const protocols: Record<string, ImageProtocol> = {};
-
-  return {
-    /** Register a new image rendering protocol */
-    register: (protocol: ImageProtocol) => {
-      protocols[protocol.name] = protocol;
-    },
-
-    /** Get a specific protocol by name */
-    getProtocol: (name: string) => {
-      return protocols[name];
-    },
-
-    /** Get all available protocol names */
-    getAllProtocols: () => {
-      return Object.keys(protocols);
-    },
-  };
+const imageProtocols = {
+  ascii: AsciiImage,
+  braille: BrailleImage,
+  halfBlock: HalfBlockImage,
+  iterm2: ITerm2Image,
+  kitty: KittyImage,
+  sixel: SixelImage,
 };
 
-// Global protocol registry instance
-const protocolRegistry = createProtocolRegistry();
-
-// Register all available image rendering protocols
-protocolRegistry.register({
-  name: "ascii",
-  render: AsciiImage,
-});
-protocolRegistry.register({
-  name: "halfBlock",
-  render: HalfBlockImage,
-});
-protocolRegistry.register({
-  name: "braille",
-  render: BrailleImage,
-});
-protocolRegistry.register({
-  name: "sixel",
-  render: SixelImage,
-});
-protocolRegistry.register({
-  name: "iterm2",
-  render: ITerm2Image,
-});
-protocolRegistry.register({
-  name: "kitty",
-  render: KittyImage,
-});
+type ImageProtocolName = keyof typeof imageProtocols;
 
 /**
  * Internal component that renders an image using a specific protocol.
@@ -71,10 +24,9 @@ protocolRegistry.register({
  * @param props - Image props with protocol specification
  * @returns JSX element rendering the image with the specified protocol
  */
-const ImageRenderer = (props: ImageProps & { protocol: string }) => {
+const ImageRenderer = (props: ImageProps & { protocol: ImageProtocolName }) => {
   const ProtocolComponent =
-    protocolRegistry.getProtocol(props.protocol)?.render ??
-    protocolRegistry.getProtocol("ascii")!.render;
+    imageProtocols[props.protocol] || imageProtocols["ascii"];
   return <ProtocolComponent {...props} />;
 };
 
@@ -140,10 +92,8 @@ const ImageRenderer = (props: ImageProps & { protocol: string }) => {
 function Image({
   protocol: initialProtocol = "ascii",
   ...props
-}: Omit<ImageProps & { protocol?: string }, "onSupportDetected">) {
+}: Omit<ImageProps & { protocol?: ImageProtocolName }, "onSupportDetected">) {
   const [protocol, setProtocol] = useState(initialProtocol);
-  const [supportCheckComplete, setSupportCheckComplete] = useState(false);
-  const [fallbackAttempts, setFallbackAttempts] = useState(0);
 
   /**
    * Determines the next fallback protocol based on the current protocol and attempt count.
@@ -155,35 +105,21 @@ function Image({
    * @returns The next protocol to try
    */
   const getFallbackProtocol = useCallback(
-    (currentProtocol: string, attemptCount: number): string => {
-      if (currentProtocol === "kitty") {
-        return attemptCount === 0
-          ? "halfBlock"
-          : attemptCount === 1
-            ? "braille"
-            : "ascii";
+    (currentProtocol: ImageProtocolName): ImageProtocolName => {
+      switch (currentProtocol) {
+        case "kitty":
+          return "halfBlock";
+        case "iterm2":
+          return "halfBlock";
+        case "sixel":
+          return "halfBlock";
+        case "halfBlock":
+          return "braille";
+        case "braille":
+          return "ascii";
+        default:
+          return "ascii";
       }
-      if (currentProtocol === "iterm2") {
-        return attemptCount === 0
-          ? "halfBlock"
-          : attemptCount === 1
-            ? "braille"
-            : "ascii";
-      }
-      if (currentProtocol === "sixel") {
-        return attemptCount === 0
-          ? "halfBlock"
-          : attemptCount === 1
-            ? "braille"
-            : "ascii";
-      }
-      if (currentProtocol === "halfBlock") {
-        return attemptCount === 0 ? "braille" : "ascii";
-      }
-      if (currentProtocol === "braille") {
-        return "ascii";
-      }
-      return "ascii"; // Final fallback
     },
     [],
   );
@@ -200,42 +136,20 @@ function Image({
     (isSupported: boolean) => {
       if (isSupported) {
         // Current protocol is supported
-        setSupportCheckComplete(true);
-      } else {
-        // Try fallback protocol
-        const nextProtocol = getFallbackProtocol(protocol, fallbackAttempts);
-        if (nextProtocol !== protocol) {
-          setProtocol(nextProtocol);
-          setFallbackAttempts((prev) => prev + 1);
-          // supportCheckComplete remains false to trigger another check
-        } else {
-          // No more fallbacks, use current protocol anyway (shouldn't happen with 'ascii')
-          setSupportCheckComplete(true);
-        }
+        return;
       }
+      // Try fallback protocol
+      const nextProtocol = getFallbackProtocol(protocol);
+      setProtocol(nextProtocol);
     },
-    [protocol, fallbackAttempts, getFallbackProtocol],
+    [protocol, getFallbackProtocol],
   );
 
   // Reset support check when initial protocol changes
   useEffect(() => {
     setProtocol(initialProtocol);
-    setSupportCheckComplete(false);
-    setFallbackAttempts(0);
   }, [initialProtocol]);
 
-  // Render protocol for support detection phase
-  if (!supportCheckComplete) {
-    // Render the current protocol to detect support
-    const ProtocolComponent =
-      protocolRegistry.getProtocol(protocol)?.render ??
-      protocolRegistry.getProtocol("ascii")!.render;
-    return (
-      <ProtocolComponent {...props} onSupportDetected={handleSupportDetected} />
-    );
-  }
-
-  // Render with confirmed supported protocol
   return (
     <ImageRenderer
       protocol={protocol}
@@ -244,8 +158,5 @@ function Image({
     />
   );
 }
-
-/** Array of all available image rendering protocol names */
-export const ImageProtocols = protocolRegistry.getAllProtocols();
 
 export default Image;
