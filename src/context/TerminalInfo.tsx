@@ -270,7 +270,7 @@ export const TerminalInfoProvider = ({
 
   return (
     <TerminalInfoContext.Provider value={terminalInfo}>
-      {children}
+      {terminalInfo ? children : null}
     </TerminalInfoContext.Provider>
   );
 };
