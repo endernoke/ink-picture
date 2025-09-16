@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Box, Text, Newline, useStdout, type DOMElement } from "ink";
 // import { backgroundContext } from "ink";
-import AnsiEscapes from "ansi-escapes";
 import usePosition from "../../hooks/usePosition.js";
 import {
   useTerminalDimensions,
@@ -9,6 +8,7 @@ import {
 } from "../../context/TerminalInfo.js";
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
+import sharp from "sharp";
 
 /**
  * ITerm2 Image Rendering Component
@@ -273,10 +273,17 @@ function ITerm2Image(props: ImageProps) {
  * @param imageData - Raw image data with buffer and metadata from Sharp
  * @returns ITerm2-formatted string
  */
-function toITerm2(imageData: { data: Buffer }) {
-  const { data } = imageData;
+function toITerm2(imageData: { data: Buffer; info: sharp.OutputInfo }) {
+  const { data, info } = imageData;
 
-  const iTerm2Data = AnsiEscapes.image(data);
+  const iTerm2Data =
+    "\x1b]1337;File=" +
+    `size=${info.size};` +
+    `width=auto;height=auto;` +
+    `preserveAspectRatio=1;` +
+    `inline=1:` +
+    data.toString("base64") +
+    "\x07";
   return iTerm2Data;
 }
 

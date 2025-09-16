@@ -1,6 +1,6 @@
 {
   "name": "ink-picture",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Better image component for Ink CLI/TUIs",
   "license": "MIT",
   "repository": "https://github.com/endernoke/ink-picture",
@@ -58,11 +58,9 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "husky": "^9.1.7",
-    "i": "^0.3.7",
     "ink": "^6.2.2",
     "ink-testing-library": "^4.0.0",
     "lint-staged": "^16.1.6",
-    "npm": "^11.5.2",
     "prettier": "^3.6.2",
     "react": "^19.1.1",
     "tsimp": "^2.0.12",
@@ -83,7 +81,6 @@
     ]
   },
   "dependencies": {
-    "ansi-escapes": "^7.1.0",
     "chalk": "^5.6.0",
     "is-unicode-supported": "^2.1.0",
     "iterm2-version": "^5.0.0",
