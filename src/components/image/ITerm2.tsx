@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Box, Text, Newline, useStdout, type DOMElement } from "ink";
 // import { backgroundContext } from "ink";
-import AnsiEscapes from "ansi-escapes";
 import usePosition from "../../hooks/usePosition.js";
 import {
   useTerminalDimensions,
