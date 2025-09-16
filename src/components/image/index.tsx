@@ -90,27 +90,40 @@ const ImageRenderer = (props: ImageProps & { protocol: ImageProtocolName }) => {
  * @throws Error if not used within TerminalInfoProvider context
  */
 function Image({
-  protocol: initialProtocol = "ascii",
+  protocol: specifiedProtocol = "auto",
   ...props
-}: Omit<ImageProps & { protocol?: ImageProtocolName }, "onSupportDetected">) {
-  const [protocol, setProtocol] = useState(initialProtocol);
+}: Omit<
+  ImageProps & { protocol?: ImageProtocolName | "auto" },
+  "onSupportDetected"
+>) {
+  // Force a protocol if specified
+  if (specifiedProtocol !== "auto") {
+    return (
+      <ImageRenderer
+        protocol={specifiedProtocol}
+        {...props}
+        onSupportDetected={() => {}}
+      />
+    );
+  }
+
+  const [protocol, setProtocol] = useState("kitty" as ImageProtocolName);
 
   /**
    * Determines the next fallback protocol based on the current protocol and attempt count.
    *
-   * Fallback hierarchy: halfBlock -> braille -> ascii
+   * Fallback hierarchy: kitty -> iterm2 -> sixel -> halfBlock -> braille -> ascii
    *
    * @param currentProtocol - The currently attempted protocol
-   * @param attemptCount - Number of fallback attempts made
    * @returns The next protocol to try
    */
   const getFallbackProtocol = useCallback(
     (currentProtocol: ImageProtocolName): ImageProtocolName => {
       switch (currentProtocol) {
         case "kitty":
-          return "halfBlock";
+          return "iterm2";
         case "iterm2":
-          return "halfBlock";
+          return "sixel";
         case "sixel":
           return "halfBlock";
         case "halfBlock":
@@ -144,11 +157,6 @@ function Image({
     },
     [protocol, getFallbackProtocol],
   );
-
-  // Reset support check when initial protocol changes
-  useEffect(() => {
-    setProtocol(initialProtocol);
-  }, [initialProtocol]);
 
   return (
     <ImageRenderer
