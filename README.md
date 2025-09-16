@@ -48,7 +48,7 @@ render(<App />);
 ```
 
 > [!IMPORTANT]
-> Always wrap your app with `TerminalInfoProvider` to enable automatic terminal capability detection.
+> Always wrap your app with `TerminalInfoProvider`.
 
 ## API
 
@@ -77,11 +77,30 @@ The component automatically selects the best available protocol:
 
 ### `<TerminalInfoProvider>`
 
-Required wrapper component that detects terminal capabilities.
+Required wrapper component that automatically detects terminal capabilities.
+
+Image rendering components depend on terminal information to select the best protocol and size images correctly. All `Image` components must be wrapped in `TerminalInfoProvider`.
+
+For best performance, wrap your entire component tree so that terminal info detection is done only once per session.
 
 ```tsx
 <TerminalInfoProvider>{/* Your app components */}</TerminalInfoProvider>
 ```
+
+<details>
+  <summary>Why should I do this?</summary>
+
+Under the hood, `TerminalInfoProvider` wraps a React context which uses a combination of ANSI control sequence queries, environment variables, and heuristics to determine:
+
+- Terminal cell size in pixels
+- Unicode and color support
+- Supported terminal image protocols
+
+During this detection phase, it will write some escape sequences to stdout and listen for system responses from stdin. This takes sub-second time and should not be visually noticeable.
+
+It should not interfere with user input, but just in case, it is recommended to wrap your entire component tree in `TerminalInfoProvider` so that detection is finished on startup in order to minimize the chance of any interference.
+
+</details>
 
 ### Individual Components
 

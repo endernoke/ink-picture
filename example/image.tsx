@@ -12,7 +12,7 @@ const DEMO_IMAGE = "https://sipi.usc.edu/database/preview/misc/4.1.05.png";
 
 type ProtocolConfig = {
   name: string;
-  protocol: string;
+  protocol: React.ComponentProps<typeof Image>["protocol"];
   description: string;
   requirements: string;
   getSupportStatus: (caps: TerminalCapabilities) => {

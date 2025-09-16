@@ -32,7 +32,7 @@
  */
 
 // Main Image component - the primary export
-export { default, ImageProtocols } from "./components/image/index.js";
+export { default } from "./components/image/index.js";
 
 // Terminal info context and provider - required for Image component
 export {
