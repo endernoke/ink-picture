@@ -294,7 +294,9 @@ export const useTerminalInfo = () => {
     const timeoutId = setTimeout(() => {
       if (!terminalInfo) {
         throw new Error(
-          "Terminal info not available. (Did you forget to wrap your component in <TerminalInfoProvider>?)",
+          "Terminal info not available. (Did you forget to wrap your component in <TerminalInfoProvider>?)\n" +
+            "Apps using the `ink-picture` Image component must be wrapped in a <TerminalInfoProvider>.\n" +
+            "See https://github.com/endernoke/ink-picture?tab=readme-ov-file#terminalinfoprovider for details.",
         );
       }
     }, 2000);
