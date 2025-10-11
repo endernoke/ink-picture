@@ -16,12 +16,21 @@ function queryEscapeSequence(
     let timeoutBetweenRepliesId: NodeJS.Timeout | undefined = undefined;
     let runningReply = "";
 
+    const wasRaw = stdin.isRaw;
     // if Ink has not already set raw mode and it supports raw, enable it
-    if (!stdin.isRaw && stdin.isTTY) {
+    if (!wasRaw && stdin.isTTY) {
       stdin.setRawMode(true);
     }
 
     const restoreState = () => {
+      if (stdin.isTTY) {
+        stdin.setRawMode(wasRaw);
+      }
+
+      // remove listeners
+      stdin.removeListener("data", onData);
+      stdin.removeListener("close", onClose);
+
       if (responseTimeoutId !== undefined) {
         clearTimeout(responseTimeoutId);
       }
@@ -30,7 +39,7 @@ function queryEscapeSequence(
       }
     };
 
-    stdin.on("data", (data) => {
+    const onData = (data: string) => {
       if (responseTimeoutId !== undefined) {
         clearTimeout(responseTimeoutId);
       }
@@ -42,13 +51,15 @@ function queryEscapeSequence(
         restoreState();
         resolve(runningReply.length > 0 ? runningReply : undefined);
       }, timeoutBetweenReplies);
-    });
+    };
 
-    stdin.on("close", () => {
+    const onClose = () => {
       restoreState();
       resolve(runningReply.length > 0 ? runningReply : undefined);
-    });
-    // stdin.on("")
+    };
+
+    stdin.on("data", onData);
+    stdin.on("close", onClose);
 
     responseTimeoutId = setTimeout(() => {
       restoreState();
