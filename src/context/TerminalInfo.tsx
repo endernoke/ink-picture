@@ -216,12 +216,6 @@ export const TerminalInfoProvider = ({
           height: 12,
         };
       }
-      const dimensions: TerminalDimensions = {
-        viewportWidth: cellDimensions.width * process.stdout.columns,
-        viewportHeight: cellDimensions.height * process.stdout.rows,
-        cellWidth: cellDimensions.width,
-        cellHeight: cellDimensions.height,
-      };
 
       // Capabilities
       // TODO: "Note that the check is quite naive. It just assumes all non-Windows terminals support Unicode and hard-codes which Windows terminals that do support Unicode. However, people have been using this logic in some popular packages for years without problems."
@@ -251,6 +245,33 @@ export const TerminalInfoProvider = ({
         supportsSixelGraphics = true;
       }
       const supportsITerm2Graphics = supportsITerm2({ supportsSixelGraphics });
+
+      // Query iTerm2 scale if supported
+      let scale = 1;
+      if (supportsITerm2Graphics) {
+        const reportCellSizeResponse = await queryEscapeSequence(
+          "\x1b]1337;ReportCellSize\x07",
+        );
+        if (reportCellSizeResponse) {
+          // Response format: \x1b]1337;ReportCellSize=height;width;scale\x1b\\
+          const match = reportCellSizeResponse.match(
+            /ReportCellSize=([\d.]+);([\d.]+);([\d.]+)/,
+          );
+          if (match && match[3]) {
+            const parsedScale = parseFloat(match[3]);
+            if (!isNaN(parsedScale)) {
+              scale = parsedScale;
+            }
+          }
+        }
+      }
+
+      const dimensions: TerminalDimensions = {
+        viewportWidth: cellDimensions.width * scale * process.stdout.columns,
+        viewportHeight: cellDimensions.height * scale * process.stdout.rows,
+        cellWidth: cellDimensions.width * scale,
+        cellHeight: cellDimensions.height * scale,
+      };
 
       const capabilities: TerminalCapabilities = {
         supportsUnicode,

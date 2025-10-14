@@ -126,7 +126,7 @@ function ITerm2Image(props: ImageProps) {
         ),
       });
 
-      const output = toITerm2(resizedImage);
+      const output = toITerm2(resizedImage, { width, height });
       setImageOutput(output);
     };
     generateImageOutput();
@@ -270,16 +270,22 @@ function ITerm2Image(props: ImageProps) {
  * string contains escape sequences that can be written directly to a
  * terminal that supports ITerm2 graphics.
  *
+ * @note We do not use auto width and height because we might adjust it based on scale factor
+ *
  * @param imageData - Raw image data with buffer and metadata from Sharp
  * @returns ITerm2-formatted string
  */
-function toITerm2(imageData: { data: Buffer; info: sharp.OutputInfo }) {
+function toITerm2(
+  imageData: { data: Buffer; info: sharp.OutputInfo },
+  options: { width: number; height: number },
+) {
   const { data, info } = imageData;
+  const { width, height } = options;
 
   const iTerm2Data =
     "\x1b]1337;File=" +
     `size=${info.size};` +
-    `width=auto;height=auto;` +
+    `width=${width}px;height=${height}px;` +
     `preserveAspectRatio=1;` +
     `inline=1:` +
     data.toString("base64") +
