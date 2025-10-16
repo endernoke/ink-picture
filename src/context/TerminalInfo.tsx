@@ -51,6 +51,26 @@ function supportsITerm2(context?: { supportsSixelGraphics: boolean }) {
     if (context?.supportsSixelGraphics) {
       return true;
     }
+  } else if (process.env["TERM_PROGRAM"] === "WarpTerminal") {
+    const version = process.env["TERM_PROGRAM_VERSION"];
+    // Supported since v0.2025.03.05.08.02
+    // See https://docs.warp.dev/getting-started/changelog
+    if (version) {
+      const [, year, month, day] = version
+        .slice(1)
+        .split(".")
+        .map((v) => parseInt(v, 10));
+      if (
+        !Number.isNaN(year) &&
+        !Number.isNaN(month) &&
+        !Number.isNaN(day) &&
+        (year > 2025 ||
+          (year === 2025 && month > 3) ||
+          (year === 2025 && month === 3 && day >= 5))
+      ) {
+        return true;
+      }
+    }
   }
   return false;
 }
