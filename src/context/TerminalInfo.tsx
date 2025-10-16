@@ -247,6 +247,8 @@ export const TerminalInfoProvider = ({
       const supportsITerm2Graphics = supportsITerm2({ supportsSixelGraphics });
 
       // Query iTerm2 scale if supported
+      // to fix point and pixel unit mismatches on e.g. retina displays
+      // See https://iterm2.com/documentation-escape-codes.html#report-cell-size
       let scale = 1;
       if (supportsITerm2Graphics) {
         const reportCellSizeResponse = await queryEscapeSequence(
@@ -257,9 +259,17 @@ export const TerminalInfoProvider = ({
           const match = reportCellSizeResponse.match(
             /ReportCellSize=([\d.]+);([\d.]+);([\d.]+)/,
           );
-          if (match && match[3]) {
+          if (match && match[1] && match[2] && match[3]) {
+            const width = parseFloat(match[2]);
+            const height = parseFloat(match[1]);
             const parsedScale = parseFloat(match[3]);
-            if (!isNaN(parsedScale)) {
+            if (
+              !Number.isNaN(width) &&
+              !Number.isNaN(height) &&
+              !isNaN(parsedScale)
+            ) {
+              // Use the reported cell width/height to adjust our cell dimensions
+              cellDimensions = { width, height };
               scale = parsedScale;
             }
           }

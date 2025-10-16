@@ -113,8 +113,6 @@ function ITerm2Image(props: ImageProps) {
       });
 
       const resizedImage = await image
-        .resize(width, height)
-        .ensureAlpha() // node-iTerm2 requires alpha channel to be present
         .png() // iTerm2 expects a FILE, not raw pixel data
         .toBuffer({ resolveWithObject: true });
       setActualSizeInCells({
