@@ -6,6 +6,8 @@ import BrailleImage from "./Braille.js";
 import SixelImage from "./Sixel.js";
 import ITerm2Image from "./ITerm2.js";
 import KittyImage from "./Kitty.js";
+import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
+import { getBestProtocol } from "../../utils/getBestProtocol.js";
 
 const imageProtocols = {
   ascii: AsciiImage,
@@ -96,18 +98,12 @@ function Image({
   ImageProps & { protocol?: ImageProtocolName | "auto" },
   "onSupportDetected"
 >) {
-  // Force a protocol if specified
-  if (specifiedProtocol !== "auto") {
-    return (
-      <ImageRenderer
-        protocol={specifiedProtocol}
-        {...props}
-        onSupportDetected={() => {}}
-      />
-    );
-  }
-
-  const [protocol, setProtocol] = useState("kitty" as ImageProtocolName);
+  const terminalCapabilitiesContext = useTerminalCapabilities();
+  const [protocol, setProtocol] = useState(
+    terminalCapabilitiesContext
+      ? getBestProtocol(terminalCapabilitiesContext)
+      : ("auto" as ImageProtocolName),
+  );
 
   /**
    * Determines the next fallback protocol based on the current protocol and attempt count.
@@ -157,6 +153,17 @@ function Image({
     },
     [protocol, getFallbackProtocol],
   );
+
+  // Force a protocol if specified
+  if (specifiedProtocol !== "auto") {
+    return (
+      <ImageRenderer
+        protocol={specifiedProtocol}
+        {...props}
+        onSupportDetected={() => {}}
+      />
+    );
+  }
 
   return (
     <ImageRenderer
