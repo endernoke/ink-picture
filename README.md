@@ -62,18 +62,18 @@ Main component with automatic protocol detection and fallback.
 - `width?` (number) - Width in terminal cells
 - `height?` (number) - Height in terminal cells
 - `alt?` (string) - Alternative text for loading/error states
-- `protocol?` (string) - Force specific protocol: `"ascii" | "braille" | "halfBlock" | "sixel" | "iterm2" | "kitty"`
+- `protocol?` (string) - Force specific protocol: `"auto" | "ascii" | "braille" | "halfBlock" | "sixel" | "iterm2" | "kitty"`
 
 #### Protocols
 
-The component automatically selects the best available protocol:
+The component automatically selects the best available protocol with the following priority:
 
-1. **Half-block** (`halfBlock`) - Color rendering with Unicode half-blocks (▄). Requires color + Unicode support.
-2. **Braille** (`braille`) - High-resolution monochrome using Braille patterns. Requires Unicode support.
-3. **ASCII** (`ascii`) - Character-based art. Works in all terminals (fallback).
-4. **Sixel** (`sixel`) - True color bitmap graphics in [Sixel-compatible terminals](https://www.arewesixelyet.com/).
-5. **iTerm2** (`iterm2`) - True color images in terminals that implements the [iTerm2 inline images protocol](https://iterm2.com/documentation-images.html).
-6. **Kitty** (`kitty`) - True color images in terminals that support the [Kitty terminal graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/).
+1. **Kitty** (`kitty`) - True color images in terminals that support the [Kitty terminal graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/).
+2. **iTerm2** (`iterm2`) - True color images in terminals that implements the [iTerm2 inline images protocol](https://iterm2.com/documentation-images.html).
+3. **Sixel** (`sixel`) - True color bitmap graphics in [Sixel-compatible terminals](https://www.arewesixelyet.com/).
+4. **Half-block** (`halfBlock`) - Color rendering with Unicode half-blocks (▄). Requires color + Unicode support.
+5. **Braille** (`braille`) - High-resolution monochrome using Braille patterns. Requires Unicode support.
+6. **ASCII** (`ascii`) - Character-based art. Works in all terminals (fallback).
 
 ### `<TerminalInfoProvider>`
 
@@ -216,7 +216,7 @@ Generally, it is recommended to use the kitty protocol if it is fully supported,
 
 Otherwise, the performance of sixel and iterm2 protocols are practically the same, so use whichever your terminal supports.
 
-If not provided with a explicit protocol, `ink-picture` will automatically select the best available protocol from the fallbacks (`halfBlock`, `braille`, `ascii`) based on detected terminal capabilities.
+If not provided with a explicit protocol, `ink-picture` will automatically select the best available protocol based on detected terminal capabilities.
 
 See the [protocols section](#protocols) for more details.
 
