@@ -41,6 +41,12 @@ function BrailleImage(props: ImageProps) {
   const [hasError, setHasError] = useState<boolean>(false);
   const containerRef = useRef<DOMElement | null>(null);
   const terminalCapabilities = useTerminalCapabilities();
+  const {
+    onSupportDetected,
+    src,
+    width: propsWidth,
+    height: propsHeight,
+  } = props;
 
   // Detect support and notify parent
   useEffect(() => {
@@ -48,12 +54,12 @@ function BrailleImage(props: ImageProps) {
 
     // Braille rendering requires Unicode support for braille characters
     const isSupported = terminalCapabilities.supportsUnicode;
-    props.onSupportDetected?.(isSupported);
-  }, [terminalCapabilities, props.onSupportDetected]);
+    onSupportDetected?.(isSupported);
+  }, [terminalCapabilities, onSupportDetected]);
 
   useEffect(() => {
     const generateImageOutput = async () => {
-      const image = await fetchImage(props.src);
+      const image = await fetchImage(src);
       if (!image) {
         setHasError(true);
         return;
@@ -70,8 +76,8 @@ function BrailleImage(props: ImageProps) {
         maxWidth: maxWidth * 2,
         maxHeight: maxHeight * 4,
         originalAspectRatio: metadata.width / metadata.height,
-        specifiedWidth: props.width ? props.width * 2 : undefined,
-        specifiedHeight: props.height ? props.height * 4 : undefined,
+        specifiedWidth: propsWidth ? propsWidth * 2 : undefined,
+        specifiedHeight: propsHeight ? propsHeight * 4 : undefined,
       });
 
       const resizedImage = await image
@@ -83,7 +89,7 @@ function BrailleImage(props: ImageProps) {
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [props.src, props.width, props.height, containerRef.current]);
+  }, [src, propsWidth, propsHeight]);
 
   return (
     <Box ref={containerRef} flexDirection="column" flexGrow={1}>

@@ -31,6 +31,12 @@ function AsciiImage(props: ImageProps) {
   const [hasError, setHasError] = useState<boolean>(false);
   const containerRef = useRef<DOMElement | null>(null);
   const terminalCapabilities = useTerminalCapabilities();
+  const {
+    onSupportDetected,
+    src,
+    width: propsWidth,
+    height: propsHeight,
+  } = props;
 
   // Detect support and notify parent
   useEffect(() => {
@@ -39,12 +45,12 @@ function AsciiImage(props: ImageProps) {
     // ASCII rendering works in all terminals, but colored ASCII requires color support
     // Inclusion of color support is dynamically handled by conversion logic
     const isSupported = true; // ASCII always works as fallback
-    props.onSupportDetected(isSupported);
-  }, [props.onSupportDetected, terminalCapabilities]);
+    onSupportDetected(isSupported);
+  }, [onSupportDetected, terminalCapabilities]);
 
   useEffect(() => {
     const generateImageOutput = async () => {
-      const image = await fetchImage(props.src);
+      const image = await fetchImage(src);
       if (!image) {
         setHasError(true);
         return;
@@ -63,8 +69,8 @@ function AsciiImage(props: ImageProps) {
         maxWidth,
         maxHeight,
         originalAspectRatio: metadata.width! / (metadata.height! / 2),
-        specifiedWidth: props.width,
-        specifiedHeight: props.height ? props.height / 2 : undefined,
+        specifiedWidth: propsWidth,
+        specifiedHeight: propsHeight ? propsHeight / 2 : undefined,
       });
 
       const resizedImage = await image
@@ -79,13 +85,7 @@ function AsciiImage(props: ImageProps) {
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [
-    props.src,
-    props.width,
-    props.height,
-    containerRef.current,
-    terminalCapabilities,
-  ]);
+  }, [src, propsWidth, propsHeight, terminalCapabilities]);
 
   return (
     <Box ref={containerRef} flexDirection="column" flexGrow={1}>

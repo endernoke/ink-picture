@@ -62,6 +62,12 @@ function SixelImage(props: ImageProps) {
     height: number;
   } | null>(null);
   const shouldCleanupRef = useRef<boolean>(true);
+  const {
+    src,
+    onSupportDetected,
+    width: propsWidth,
+    height: propsHeight,
+  } = props;
 
   // Detect support and notify parent
   useEffect(() => {
@@ -69,8 +75,8 @@ function SixelImage(props: ImageProps) {
 
     // Sixel rendering requires explicit sixel graphics support
     const isSupported = terminalCapabilities.supportsSixelGraphics;
-    props.onSupportDetected?.(isSupported);
-  }, [terminalCapabilities, props.onSupportDetected]);
+    onSupportDetected?.(isSupported);
+  }, [terminalCapabilities, onSupportDetected]);
 
   // TODO: If we upgrade to Ink 6 we will need to deal with Box background colors when rendering/cleaning up
   // const inheritedBackgroundColor = useContext(backgroundContext);
@@ -86,59 +92,63 @@ function SixelImage(props: ImageProps) {
    * 5. Converts processed image data to Sixel format
    * 6. Tracks actual size in terminal cells for cleanup purposes
    */
-  useEffect(() => {
-    const generateImageOutput = async () => {
-      if (!componentPosition) return;
-      if (!terminalDimensions) return;
+  useEffect(
+    () => {
+      const generateImageOutput = async () => {
+        if (!componentPosition) return;
+        if (!terminalDimensions) return;
 
-      const image = await fetchImage(props.src);
-      if (!image) {
-        setHasError(true);
-        return;
-      }
-      setHasError(false);
+        const image = await fetchImage(src);
+        if (!image) {
+          setHasError(true);
+          return;
+        }
+        setHasError(false);
 
-      const metadata = await image.metadata();
+        const metadata = await image.metadata();
 
-      const { width: maxWidth, height: maxHeight } = componentPosition;
-      const { width, height } = calculateImageSize({
-        maxWidth: maxWidth * terminalDimensions.cellWidth,
-        maxHeight: maxHeight * terminalDimensions.cellHeight,
-        originalAspectRatio: metadata.width / metadata.height,
-        specifiedWidth: props.width
-          ? props.width * terminalDimensions.cellWidth
-          : undefined,
-        specifiedHeight: props.height
-          ? props.height * terminalDimensions.cellHeight
-          : undefined,
-      });
+        const { width: maxWidth, height: maxHeight } = componentPosition;
+        const { width, height } = calculateImageSize({
+          maxWidth: maxWidth * terminalDimensions.cellWidth,
+          maxHeight: maxHeight * terminalDimensions.cellHeight,
+          originalAspectRatio: metadata.width / metadata.height,
+          specifiedWidth: propsWidth
+            ? propsWidth * terminalDimensions.cellWidth
+            : undefined,
+          specifiedHeight: propsHeight
+            ? propsHeight * terminalDimensions.cellHeight
+            : undefined,
+        });
 
-      const resizedImage = await image
-        .resize(width, height)
-        .ensureAlpha() // node-sixel requires alpha channel to be present
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-      setActualSizeInCells({
-        width: Math.ceil(
-          resizedImage.info.width / terminalDimensions.cellWidth,
-        ),
-        height: Math.ceil(
-          resizedImage.info.height / terminalDimensions.cellHeight,
-        ),
-      });
+        const resizedImage = await image
+          .resize(width, height)
+          .ensureAlpha() // node-sixel requires alpha channel to be present
+          .raw()
+          .toBuffer({ resolveWithObject: true });
+        setActualSizeInCells({
+          width: Math.ceil(
+            resizedImage.info.width / terminalDimensions.cellWidth,
+          ),
+          height: Math.ceil(
+            resizedImage.info.height / terminalDimensions.cellHeight,
+          ),
+        });
 
-      const output = await toSixel(resizedImage);
-      setImageOutput(output);
-    };
-    generateImageOutput();
-  }, [
-    props.src,
-    props.width,
-    props.height,
-    componentPosition?.width,
-    componentPosition?.height,
-    terminalDimensions,
-  ]);
+        const output = await toSixel(resizedImage);
+        setImageOutput(output);
+      };
+      generateImageOutput();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      src,
+      propsWidth,
+      propsHeight,
+      componentPosition?.width,
+      componentPosition?.height,
+      terminalDimensions,
+    ],
+  );
 
   /**
    * Critical rendering effect for Sixel image display.

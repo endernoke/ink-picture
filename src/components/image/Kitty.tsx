@@ -57,6 +57,12 @@ function KittyImage(props: ImageProps) {
   const componentPosition = usePosition(containerRef);
   const terminalDimensions = useTerminalDimensions();
   const terminalCapabilities = useTerminalCapabilities();
+  const {
+    src,
+    onSupportDetected,
+    width: propsWidth,
+    height: propsHeight,
+  } = props;
 
   // Detect support and notify parent
   useEffect(() => {
@@ -64,8 +70,8 @@ function KittyImage(props: ImageProps) {
 
     // Kitty rendering requires explicit kitty graphics support
     const isSupported = terminalCapabilities.supportsKittyGraphics;
-    props.onSupportDetected?.(isSupported);
-  }, [terminalCapabilities, props.onSupportDetected]);
+    onSupportDetected?.(isSupported);
+  }, [terminalCapabilities, onSupportDetected]);
 
   // TODO: If we upgrade to Ink 6 we will need to deal with Box background colors when rendering/cleaning up
   // const inheritedBackgroundColor = useContext(backgroundContext);
@@ -79,76 +85,80 @@ function KittyImage(props: ImageProps) {
    * 3. Resizes image to fit within the component's allocated space
    * 4. Transfers image data to the terminal using Kitty protocol
    */
-  useEffect(() => {
-    const generateImageOutput = async () => {
-      if (!componentPosition) return;
-      if (!terminalDimensions) return;
+  useEffect(
+    () => {
+      const generateImageOutput = async () => {
+        if (!componentPosition) return;
+        if (!terminalDimensions) return;
 
-      const image = await fetchImage(props.src);
-      if (!image) {
-        setHasError(true);
-        return;
-      }
-      setHasError(false);
-
-      const metadata = await image.metadata();
-
-      const { width: maxWidth, height: maxHeight } = componentPosition;
-      const { width, height } = calculateImageSize({
-        maxWidth: maxWidth * terminalDimensions.cellWidth,
-        maxHeight: maxHeight * terminalDimensions.cellHeight,
-        originalAspectRatio: metadata.width / metadata.height,
-        specifiedWidth: props.width
-          ? props.width * terminalDimensions.cellWidth
-          : undefined,
-        specifiedHeight: props.height
-          ? props.height * terminalDimensions.cellHeight
-          : undefined,
-      });
-
-      const resizedImage = image.resize(width, height);
-
-      try {
-        const imageId = generateKittyId();
-
-        const data = await resizedImage.png().toBuffer();
-        const chunkSize = 4096; // Kitty protocol pixel data max chunk size
-        const base64Data = data.toString("base64");
-
-        const firstChunk = base64Data.slice(0, chunkSize);
-        // f=100: transmit png data; t=d: direct transfer; i=image-id;
-        // m=1: more chunks follow; q=2: suppress terminal response
-        stdout.write(
-          `\x1b_Gf=100,t=d,i=${imageId},m=1,q=2;${firstChunk}\x1b\\`,
-        );
-        let bufferOffset = chunkSize;
-        while (bufferOffset < base64Data.length - chunkSize) {
-          const chunk = base64Data.slice(
-            bufferOffset,
-            bufferOffset + chunkSize,
-          );
-          bufferOffset += chunkSize;
-          stdout.write(`\x1b_Gm=1,q=2;${chunk}\x1b\\`);
+        const image = await fetchImage(src);
+        if (!image) {
+          setHasError(true);
+          return;
         }
-        const lastChunk = base64Data.slice(bufferOffset);
-        stdout.write(`\x1b_Gm=0,q=2;${lastChunk}\x1b\\`);
+        setHasError(false);
 
-        // Set image ID only after all data are sent
-        setImageId(imageId);
-      } catch {
-        setHasError(true);
-        return;
-      }
-    };
-    generateImageOutput();
-  }, [
-    props.src,
-    props.width,
-    props.height,
-    componentPosition?.width,
-    componentPosition?.height,
-    terminalDimensions,
-  ]);
+        const metadata = await image.metadata();
+
+        const { width: maxWidth, height: maxHeight } = componentPosition;
+        const { width, height } = calculateImageSize({
+          maxWidth: maxWidth * terminalDimensions.cellWidth,
+          maxHeight: maxHeight * terminalDimensions.cellHeight,
+          originalAspectRatio: metadata.width / metadata.height,
+          specifiedWidth: propsWidth
+            ? propsWidth * terminalDimensions.cellWidth
+            : undefined,
+          specifiedHeight: propsHeight
+            ? propsHeight * terminalDimensions.cellHeight
+            : undefined,
+        });
+
+        const resizedImage = image.resize(width, height);
+
+        try {
+          const imageId = generateKittyId();
+
+          const data = await resizedImage.png().toBuffer();
+          const chunkSize = 4096; // Kitty protocol pixel data max chunk size
+          const base64Data = data.toString("base64");
+
+          const firstChunk = base64Data.slice(0, chunkSize);
+          // f=100: transmit png data; t=d: direct transfer; i=image-id;
+          // m=1: more chunks follow; q=2: suppress terminal response
+          stdout.write(
+            `\x1b_Gf=100,t=d,i=${imageId},m=1,q=2;${firstChunk}\x1b\\`,
+          );
+          let bufferOffset = chunkSize;
+          while (bufferOffset < base64Data.length - chunkSize) {
+            const chunk = base64Data.slice(
+              bufferOffset,
+              bufferOffset + chunkSize,
+            );
+            bufferOffset += chunkSize;
+            stdout.write(`\x1b_Gm=1,q=2;${chunk}\x1b\\`);
+          }
+          const lastChunk = base64Data.slice(bufferOffset);
+          stdout.write(`\x1b_Gm=0,q=2;${lastChunk}\x1b\\`);
+
+          // Set image ID only after all data are sent
+          setImageId(imageId);
+        } catch {
+          setHasError(true);
+          return;
+        }
+      };
+      generateImageOutput();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      src,
+      propsWidth,
+      propsHeight,
+      componentPosition?.width,
+      componentPosition?.height,
+      terminalDimensions,
+    ],
+  );
 
   /**
    * Critical rendering effect for Kitty image display.

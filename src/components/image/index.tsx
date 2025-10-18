@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { type ImageProps } from "./protocol.js";
 import AsciiImage from "./Ascii.js";
 import HalfBlockImage from "./HalfBlock.js";
