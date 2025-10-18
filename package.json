@@ -19,6 +19,7 @@
   },
   "scripts": {
     "format": "prettier --write .",
+    "example": "npx tsx example/image.tsx",
     "test": "tsc --noEmit && eslint . && FORCE_COLOR=1 ava",
     "build": "tsc",
     "prepare": "husky",

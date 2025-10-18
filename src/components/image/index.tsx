@@ -18,7 +18,7 @@ const imageProtocols = {
   sixel: SixelImage,
 };
 
-type ImageProtocolName = keyof typeof imageProtocols;
+export type ImageProtocolName = keyof typeof imageProtocols;
 
 /**
  * Internal component that renders an image using a specific protocol.

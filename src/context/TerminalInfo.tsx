@@ -51,6 +51,26 @@ function supportsITerm2(context?: { supportsSixelGraphics: boolean }) {
     if (context?.supportsSixelGraphics) {
       return true;
     }
+  } else if (process.env["TERM_PROGRAM"] === "WarpTerminal") {
+    const version = process.env["TERM_PROGRAM_VERSION"];
+    // Supported since v0.2025.03.05.08.02
+    // See https://docs.warp.dev/getting-started/changelog
+    if (version) {
+      const [, year, month, day] = version
+        .slice(1)
+        .split(".")
+        .map((v) => parseInt(v, 10));
+      if (
+        !Number.isNaN(year) &&
+        !Number.isNaN(month) &&
+        !Number.isNaN(day) &&
+        (year > 2025 ||
+          (year === 2025 && month > 3) ||
+          (year === 2025 && month === 3 && day >= 5))
+      ) {
+        return true;
+      }
+    }
   }
   return false;
 }
@@ -216,12 +236,6 @@ export const TerminalInfoProvider = ({
           height: 12,
         };
       }
-      const dimensions: TerminalDimensions = {
-        viewportWidth: cellDimensions.width * process.stdout.columns,
-        viewportHeight: cellDimensions.height * process.stdout.rows,
-        cellWidth: cellDimensions.width,
-        cellHeight: cellDimensions.height,
-      };
 
       // Capabilities
       // TODO: "Note that the check is quite naive. It just assumes all non-Windows terminals support Unicode and hard-codes which Windows terminals that do support Unicode. However, people have been using this logic in some popular packages for years without problems."
@@ -251,6 +265,43 @@ export const TerminalInfoProvider = ({
         supportsSixelGraphics = true;
       }
       const supportsITerm2Graphics = supportsITerm2({ supportsSixelGraphics });
+
+      // Query iTerm2 scale if supported
+      // to fix point and pixel unit mismatches on e.g. retina displays
+      // See https://iterm2.com/documentation-escape-codes.html#report-cell-size
+      let scale = 1;
+      if (supportsITerm2Graphics) {
+        const reportCellSizeResponse = await queryEscapeSequence(
+          "\x1b]1337;ReportCellSize\x07",
+        );
+        if (reportCellSizeResponse) {
+          // Response format: \x1b]1337;ReportCellSize=height;width;scale\x1b\\
+          const match = reportCellSizeResponse.match(
+            /ReportCellSize=([\d.]+);([\d.]+);([\d.]+)/,
+          );
+          if (match && match[1] && match[2] && match[3]) {
+            const width = parseFloat(match[2]);
+            const height = parseFloat(match[1]);
+            const parsedScale = parseFloat(match[3]);
+            if (
+              !Number.isNaN(width) &&
+              !Number.isNaN(height) &&
+              !isNaN(parsedScale)
+            ) {
+              // Use the reported cell width/height to adjust our cell dimensions
+              cellDimensions = { width, height };
+              scale = parsedScale;
+            }
+          }
+        }
+      }
+
+      const dimensions: TerminalDimensions = {
+        viewportWidth: cellDimensions.width * scale * process.stdout.columns,
+        viewportHeight: cellDimensions.height * scale * process.stdout.rows,
+        cellWidth: cellDimensions.width * scale,
+        cellHeight: cellDimensions.height * scale,
+      };
 
       const capabilities: TerminalCapabilities = {
         supportsUnicode,
