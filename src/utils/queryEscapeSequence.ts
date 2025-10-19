@@ -14,6 +14,7 @@ function queryEscapeSequence(
   message: string,
   stdin: NodeJS.ReadStream,
   stdout: NodeJS.WriteStream,
+  setRawMode: (value: boolean) => void,
 ) {
   return new Promise<string | undefined>((resolve) => {
     const responseTimeout = 100;
@@ -22,8 +23,10 @@ function queryEscapeSequence(
     let timeoutBetweenRepliesId: NodeJS.Timeout | undefined = undefined;
     let runningReply = "";
 
+    setRawMode(true);
+
     const restoreState = () => {
-      // remove listeners
+      setRawMode(false);
       stdin.removeListener("data", onData);
       stdin.removeListener("close", onClose);
 

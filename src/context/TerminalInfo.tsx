@@ -174,7 +174,7 @@ export const TerminalInfoProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { stdin } = useStdin();
+  const { stdin, setRawMode } = useStdin();
   const { stdout } = useStdout();
   const [terminalInfo, setTerminalInfo] = useState<TerminalInfo | undefined>(
     undefined,
@@ -189,6 +189,7 @@ export const TerminalInfoProvider = ({
           "\x1b[16t",
           stdin,
           stdout,
+          setRawMode,
         );
         if (!cellPixelDimensionsResponse) {
           throw new Error();
@@ -214,6 +215,7 @@ export const TerminalInfoProvider = ({
           "\x1b[14t",
           stdin,
           stdout,
+          setRawMode,
         );
         if (!terminalPixelDimensionsResponse) {
           return undefined;
@@ -258,6 +260,7 @@ export const TerminalInfoProvider = ({
         "\x1b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\x1b\\ \x1b[c",
         stdin,
         stdout,
+        setRawMode,
       );
       let supportsKittyGraphics = false;
       if (kittyResponse && kittyResponse.includes("OK")) {
@@ -268,6 +271,7 @@ export const TerminalInfoProvider = ({
         "\x1b[c",
         stdin,
         stdout,
+        setRawMode,
       );
       let supportsSixelGraphics = false;
       if (
@@ -291,6 +295,7 @@ export const TerminalInfoProvider = ({
           "\x1b]1337;ReportCellSize\x07",
           stdin,
           stdout,
+          setRawMode,
         );
         if (reportCellSizeResponse) {
           // Response format: \x1b]1337;ReportCellSize=height;width;scale\x1b\\
@@ -335,7 +340,7 @@ export const TerminalInfoProvider = ({
       });
     };
     queryTerminalInfo();
-  }, [stdin, stdout]);
+  }, [stdin, stdout, setRawMode]);
 
   return (
     <TerminalInfoContext.Provider value={terminalInfo}>
