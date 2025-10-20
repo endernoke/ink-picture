@@ -123,12 +123,8 @@ function ITerm2Image(props: ImageProps) {
           .png() // iTerm2 expects a FILE, not raw pixel data
           .toBuffer({ resolveWithObject: true });
         setActualSizeInCells({
-          width: Math.ceil(
-            resizedImage.info.width / terminalDimensions.cellWidth,
-          ),
-          height: Math.ceil(
-            resizedImage.info.height / terminalDimensions.cellHeight,
-          ),
+          width: Math.ceil(width / terminalDimensions.cellWidth),
+          height: Math.ceil(height / terminalDimensions.cellHeight),
         });
 
         const output = toITerm2(resizedImage, { width, height });
