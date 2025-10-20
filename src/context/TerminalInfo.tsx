@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
+import { useStdin, useStdout } from "ink";
 import queryEscapeSequence from "../utils/queryEscapeSequence.js";
 import supportsColor from "supports-color";
 import checkIsUnicodeSupported from "is-unicode-supported";
@@ -173,60 +174,71 @@ export const TerminalInfoProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const { stdin, setRawMode } = useStdin();
+  const { stdout } = useStdout();
   const [terminalInfo, setTerminalInfo] = useState<TerminalInfo | undefined>(
     undefined,
   );
 
-  async function getCellPixelDimensions(): Promise<
-    { width: number; height: number } | undefined
-  > {
-    try {
-      const cellPixelDimensionsResponse = await queryEscapeSequence("\x1b[16t");
-      if (!cellPixelDimensionsResponse) {
-        throw new Error();
-      }
-      // example format: "\x1b[4;1012;1419t"
-      const parsedResponse =
-        // eslint-disable-next-line no-control-regex
-        cellPixelDimensionsResponse.match(/\x1b\[6;(\d+);(\d+);?t/);
-      if (!parsedResponse || !parsedResponse[1] || !parsedResponse[2]) {
-        throw new Error();
-      }
-      const height = parseInt(parsedResponse[1], 10);
-      const width = parseInt(parsedResponse[2], 10);
-      if (Number.isNaN(height) || Number.isNaN(width)) {
-        throw new Error();
-      }
-      return {
-        width,
-        height,
-      };
-    } catch {
-      const terminalPixelDimensionsResponse =
-        await queryEscapeSequence("\x1b[14t");
-      if (!terminalPixelDimensionsResponse) {
-        return undefined;
-      }
-      // example format: "\x1b[4;1012;1419t"
-      const parsedResponse =
-        // eslint-disable-next-line no-control-regex
-        terminalPixelDimensionsResponse.match(/\x1b\[4;(\d+);(\d+);?t/);
-      if (!parsedResponse || !parsedResponse[1] || !parsedResponse[2]) {
-        return undefined;
-      }
-      const height = parseInt(parsedResponse[1], 10);
-      const width = parseInt(parsedResponse[2], 10);
-      if (Number.isNaN(height) || Number.isNaN(width)) {
-        return undefined;
-      }
-      return {
-        width: width / process.stdout.columns,
-        height: height / process.stdout.rows,
-      };
-    }
-  }
-
   useEffect(() => {
+    async function getCellPixelDimensions(): Promise<
+      { width: number; height: number } | undefined
+    > {
+      try {
+        const cellPixelDimensionsResponse = await queryEscapeSequence(
+          "\x1b[16t",
+          stdin,
+          stdout,
+          setRawMode,
+        );
+        if (!cellPixelDimensionsResponse) {
+          throw new Error();
+        }
+        // example format: "\x1b[4;1012;1419t"
+        const parsedResponse =
+          // eslint-disable-next-line no-control-regex
+          cellPixelDimensionsResponse.match(/\x1b\[6;(\d+);(\d+);?t/);
+        if (!parsedResponse || !parsedResponse[1] || !parsedResponse[2]) {
+          throw new Error();
+        }
+        const height = parseInt(parsedResponse[1], 10);
+        const width = parseInt(parsedResponse[2], 10);
+        if (Number.isNaN(height) || Number.isNaN(width)) {
+          throw new Error();
+        }
+        return {
+          width,
+          height,
+        };
+      } catch {
+        const terminalPixelDimensionsResponse = await queryEscapeSequence(
+          "\x1b[14t",
+          stdin,
+          stdout,
+          setRawMode,
+        );
+        if (!terminalPixelDimensionsResponse) {
+          return undefined;
+        }
+        // example format: "\x1b[4;1012;1419t"
+        const parsedResponse =
+          // eslint-disable-next-line no-control-regex
+          terminalPixelDimensionsResponse.match(/\x1b\[4;(\d+);(\d+);?t/);
+        if (!parsedResponse || !parsedResponse[1] || !parsedResponse[2]) {
+          return undefined;
+        }
+        const height = parseInt(parsedResponse[1], 10);
+        const width = parseInt(parsedResponse[2], 10);
+        if (Number.isNaN(height) || Number.isNaN(width)) {
+          return undefined;
+        }
+        return {
+          width: width / process.stdout.columns,
+          height: height / process.stdout.rows,
+        };
+      }
+    }
+
     const queryTerminalInfo = async () => {
       // Terminal dimensions in pixels
       let cellDimensions = await getCellPixelDimensions();
@@ -246,13 +258,21 @@ export const TerminalInfoProvider = ({
       // Example response: \x1b_Gi=31;error message or OK\x1b\, or nothing
       const kittyResponse = await queryEscapeSequence(
         "\x1b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\x1b\\ \x1b[c",
+        stdin,
+        stdout,
+        setRawMode,
       );
       let supportsKittyGraphics = false;
       if (kittyResponse && kittyResponse.includes("OK")) {
         supportsKittyGraphics = true;
       }
       // Response will include '4' if sixel is supported
-      const deviceAttributesResponse = await queryEscapeSequence("\x1b[c");
+      const deviceAttributesResponse = await queryEscapeSequence(
+        "\x1b[c",
+        stdin,
+        stdout,
+        setRawMode,
+      );
       let supportsSixelGraphics = false;
       if (
         deviceAttributesResponse &&
@@ -273,6 +293,9 @@ export const TerminalInfoProvider = ({
       if (supportsITerm2Graphics) {
         const reportCellSizeResponse = await queryEscapeSequence(
           "\x1b]1337;ReportCellSize\x07",
+          stdin,
+          stdout,
+          setRawMode,
         );
         if (reportCellSizeResponse) {
           // Response format: \x1b]1337;ReportCellSize=height;width;scale\x1b\\
@@ -317,7 +340,7 @@ export const TerminalInfoProvider = ({
       });
     };
     queryTerminalInfo();
-  }, []);
+  }, [stdin, stdout, setRawMode]);
 
   return (
     <TerminalInfoContext.Provider value={terminalInfo}>
