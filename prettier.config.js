@@ -1,6 +1,6 @@
-import { type Config } from "prettier";
+// import { type Config } from "prettier";
 
-const config: Config = {
+const config = {
   trailingComma: "all",
   semi: true,
   singleQuote: false,
