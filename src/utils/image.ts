@@ -28,7 +28,6 @@ export async function fetchImage(
 
     return sharp(imageBuffer);
   } catch {
-    console.log("CAT");
     // console.error('Failed to fetch image:', error);
     return undefined;
   }
