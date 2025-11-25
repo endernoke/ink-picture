@@ -1,4 +1,4 @@
-import { type JSX } from "react";
+import type { JSX } from "react";
 /**
  * Props interface for image rendering components.
  *
@@ -19,6 +19,8 @@ export interface ImageProps {
   height?: number;
   /** Alternative text displayed while loading or on error */
   alt?: string;
+  /** Supports partially loaded image reading */
+  allowPartial?: boolean;
   /** Callback function to notify parent component about protocol support detection */
   onSupportDetected: (isSupported: boolean) => void;
 }

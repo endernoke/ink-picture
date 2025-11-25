@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Box, Text, Newline, useStdout, type DOMElement } from "ink";
+import { Box, type DOMElement, Newline, Text, useStdout } from "ink";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  useTerminalCapabilities,
+  useTerminalDimensions,
+} from "../../context/TerminalInfo.js";
 // import { backgroundContext } from "ink";
 import usePosition from "../../hooks/usePosition.js";
-import {
-  useTerminalDimensions,
-  useTerminalCapabilities,
-} from "../../context/TerminalInfo.js";
-import { type ImageProps } from "./protocol.js";
-import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import generateKittyId from "../../utils/generateKittyId.js";
+import { calculateImageSize, fetchImage } from "../../utils/image.js";
+import type { ImageProps } from "./protocol.js";
 
 /**
  * Kitty Image Rendering Component
@@ -62,6 +62,7 @@ function KittyImage(props: ImageProps) {
     onSupportDetected,
     width: propsWidth,
     height: propsHeight,
+    allowPartial,
   } = props;
 
   // Detect support and notify parent
@@ -91,7 +92,7 @@ function KittyImage(props: ImageProps) {
         if (!componentPosition) return;
         if (!terminalDimensions) return;
 
-        const image = await fetchImage(src);
+        const image = await fetchImage(src, allowPartial);
         if (!image) {
           setHasError(true);
           return;
@@ -157,6 +158,7 @@ function KittyImage(props: ImageProps) {
       componentPosition?.width,
       componentPosition?.height,
       terminalDimensions,
+      allowPartial,
     ],
   );
 

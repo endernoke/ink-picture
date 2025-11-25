@@ -1,14 +1,20 @@
+import { Box, render, Text, useApp, useInput } from "ink";
 import React from "react";
 import Image from "../src/components/image/index.js";
-import { Text, Box, render, useInput, useApp } from "ink";
 import {
+  type TerminalCapabilities,
   TerminalInfoProvider,
   useTerminalCapabilities,
-  type TerminalCapabilities,
 } from "../src/context/TerminalInfo.js";
 
 // Demo image - a simple test image that should work reliably
-const DEMO_IMAGE = "https://sipi.usc.edu/database/preview/misc/4.1.05.png";
+// const FETCH_DEMO_IMAGE = "https://sipi.usc.edu/database/preview/misc/4.1.05.png";
+// const FULL_IMAGE = "example/images/full.jpeg";
+// const PARTIAL_IMAGE = "example/images/partial.jpeg";
+const PARTIAL_IMAGE2 = "example/images/partial2.jpeg";
+const DEMO_IMAGE = PARTIAL_IMAGE2;
+
+const ALLOW_PARTIAL = true;
 
 type ProtocolConfig = {
   name: string;
@@ -123,6 +129,7 @@ function ProtocolDemo({ config }: { config: ProtocolConfig }) {
             src={DEMO_IMAGE}
             protocol={config.protocol}
             alt={`${config.name} demo`}
+            allowPartial={ALLOW_PARTIAL}
           />
         ) : (
           <Box
