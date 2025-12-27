@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, Text, Newline, measureElement, type DOMElement } from "ink";
 import chalk from "chalk";
-import sharp from "sharp";
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
@@ -57,8 +56,6 @@ function AsciiImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const metadata = await image.metadata();
-
       if (!containerRef.current) return;
       const { width: maxWidth, height: maxHeight } = measureElement(
         containerRef.current,
@@ -68,20 +65,26 @@ function AsciiImage(props: ImageProps) {
       const { width, height } = calculateImageSize({
         maxWidth,
         maxHeight,
-        originalAspectRatio: metadata.width! / (metadata.height! / 2),
+        originalAspectRatio: image.width / (image.height / 2),
         specifiedWidth: propsWidth,
         specifiedHeight: propsHeight ? propsHeight / 2 : undefined,
       });
 
-      const resizedImage = await image
-        .resize(width, height, { fit: "fill" })
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+      // resized in place
+      image.scaleToFit({ w: width, h: height });
+
+      // TODO: LEO: ask for thoughts on hard coding this, assuming intepreting as jpeg is fine
+      const data = await image.getBuffer("image/jpeg");
 
       const output = await toAscii(
-        resizedImage,
+        data,
+        width,
+        height,
+        // TODO: LEO: need to dig deeper in this,  assuming always 3 channels used by jimp (RGB), still not sure if this is correct
+        3,
         terminalCapabilities?.supportsColor,
       );
+
       setImageOutput(output);
     };
     generateImageOutput();
@@ -109,15 +112,12 @@ function AsciiImage(props: ImageProps) {
 }
 
 async function toAscii(
-  imageData: {
-    data: Buffer;
-    info: sharp.OutputInfo;
-  },
+  data: Buffer,
+  width: number,
+  height: number,
+  channels: number,
   colored: boolean = true,
 ) {
-  const { data, info } = imageData;
-  const { width, height, channels } = info;
-
   // ascii characters ordered by brightness
   const ascii_chars =
     "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";

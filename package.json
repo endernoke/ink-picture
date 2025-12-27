@@ -87,8 +87,8 @@
     "chalk": "^5.6.0",
     "is-unicode-supported": "^2.1.0",
     "iterm2-version": "^5.0.0",
+    "jimp": "^1.6.0",
     "node-fetch": "^3.3.2",
-    "sharp": "^0.34.3",
     "sixel": "^0.16.0",
     "supports-color": "^10.2.0"
   }

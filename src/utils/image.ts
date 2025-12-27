@@ -1,25 +1,12 @@
-import fetch from "node-fetch";
-import sharp from "sharp";
+import { Jimp } from "jimp";
+import { JimpImg } from "../types/jimp";
 
-export async function fetchImage(
-  src: string,
-): Promise<sharp.Sharp | undefined> {
+export async function fetchImage(src: string): Promise<JimpImg | undefined> {
   try {
-    let imageBuffer: Buffer;
-    if (src.startsWith("http")) {
-      const response = await fetch(src);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
-      }
-      imageBuffer = Buffer.from(await response.arrayBuffer());
-    } else {
-      // Assume local file path
-      imageBuffer = await sharp(src).toBuffer();
-    }
-
-    return sharp(imageBuffer);
-  } catch {
-    // console.error('Failed to fetch image:', error);
+    const img = await Jimp.read(src);
+    return img;
+  } catch (error) {
+    // TODO: LEO: wondering if it's possible to intgrate logger from instagram-cli into here
     return undefined;
   }
 }

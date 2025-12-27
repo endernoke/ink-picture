@@ -1,24 +1,8 @@
 import React, { useState, useCallback } from "react";
 import { type ImageProps } from "./protocol.js";
-import AsciiImage from "./Ascii.js";
-import HalfBlockImage from "./HalfBlock.js";
-import BrailleImage from "./Braille.js";
-import SixelImage from "./Sixel.js";
-import ITerm2Image from "./ITerm2.js";
-import KittyImage from "./Kitty.js";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
 import { getBestProtocol } from "../../utils/getBestProtocol.js";
-
-const imageProtocols = {
-  ascii: AsciiImage,
-  braille: BrailleImage,
-  halfBlock: HalfBlockImage,
-  iterm2: ITerm2Image,
-  kitty: KittyImage,
-  sixel: SixelImage,
-};
-
-export type ImageProtocolName = keyof typeof imageProtocols;
+import { imageProtocols, ImageProtocolName } from "../../types/image.js";
 
 /**
  * Internal component that renders an image using a specific protocol.
@@ -117,7 +101,7 @@ function Image({
     (currentProtocol: ImageProtocolName): ImageProtocolName => {
       switch (currentProtocol) {
         case "kitty":
-          return "iterm2";
+          return "kitty";
         case "iterm2":
           return "sixel";
         case "sixel":

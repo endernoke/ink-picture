@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, Text, Newline, measureElement, type DOMElement } from "ink";
-import sharp from "sharp";
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
@@ -66,8 +65,6 @@ function BrailleImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const metadata = await image.metadata();
-
       if (!containerRef.current) return;
       const { width: maxWidth, height: maxHeight } = measureElement(
         containerRef.current,
@@ -75,17 +72,19 @@ function BrailleImage(props: ImageProps) {
       const { width, height } = calculateImageSize({
         maxWidth: maxWidth * 2,
         maxHeight: maxHeight * 4,
-        originalAspectRatio: metadata.width / metadata.height,
+        originalAspectRatio: image.width / image.height,
         specifiedWidth: propsWidth ? propsWidth * 2 : undefined,
         specifiedHeight: propsHeight ? propsHeight * 4 : undefined,
       });
 
-      const resizedImage = await image
-        .resize(width, height)
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+      image.resize({ w: width, h: height });
 
-      const output = await toBraille(resizedImage);
+      // TODO: LEO: need to dig deeper here. Assuming interpreting an jpeg is fine.
+      const buffer = await image.getBuffer("image/jpeg");
+
+      // TODO: LEO: dig deeper here. assuming 3 channels always used by JIMP
+      const output = await toBraille(buffer, image.width, image.height, 3);
+
       setImageOutput(output);
     };
     generateImageOutput();
@@ -133,10 +132,12 @@ function BrailleImage(props: ImageProps) {
  * @param imageData - Raw image data from Sharp with buffer and metadata
  * @returns Promise resolving to string of Braille Unicode characters
  */
-async function toBraille(imageData: { data: Buffer; info: sharp.OutputInfo }) {
-  const { data, info } = imageData;
-  const { width, height, channels } = info;
-
+async function toBraille(
+  data: Buffer,
+  width: number,
+  height: number,
+  channels: number,
+) {
   let result = "";
   for (let y = 0; y < height - 3; y += 4) {
     for (let x = 0; x < width - 1; x += 2) {
