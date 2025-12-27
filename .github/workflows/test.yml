@@ -4,10 +4,31 @@ on:
   push:
     branches:
       - main
-    paths: 
+    paths:
+      [
+        "**.js",
+        "**.ts",
+        "**.jsx",
+        "**.tsx",
+        "**.json",
+        "**.md",
+        "**.yml",
+        "**.yaml",
+      ]
   pull_request:
     branches:
       - main
+    paths:
+      [
+        "**.js",
+        "**.ts",
+        "**.jsx",
+        "**.tsx",
+        "**.json",
+        "**.md",
+        "**.yml",
+        "**.yaml",
+      ]
 
 jobs:
   format:
@@ -20,7 +41,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install dependencies
         run: |
