@@ -4,6 +4,7 @@ import chalk from "chalk";
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
+import { Bitmap, JimpMime } from "jimp";
 
 /**
  * ASCII Image Rendering Component
@@ -65,7 +66,7 @@ function AsciiImage(props: ImageProps) {
       const { width, height } = calculateImageSize({
         maxWidth,
         maxHeight,
-        originalAspectRatio: image.width / (image.height / 2),
+        originalAspectRatio: image.bitmap.width / (image.bitmap.height / 2),
         specifiedWidth: propsWidth,
         specifiedHeight: propsHeight ? propsHeight / 2 : undefined,
       });
@@ -73,15 +74,10 @@ function AsciiImage(props: ImageProps) {
       // resized in place
       image.scaleToFit({ w: width, h: height });
 
-      // TODO: LEO: ask for thoughts on hard coding this, assuming intepreting as jpeg is fine
-      const data = await image.getBuffer("image/jpeg");
-
+      // jimp implements rgba for it's buffers (4 channels)
       const output = await toAscii(
-        data,
-        width,
-        height,
-        // TODO: LEO: need to dig deeper in this,  assuming always 3 channels used by jimp (RGB), still not sure if this is correct
-        3,
+        image.bitmap,
+        4,
         terminalCapabilities?.supportsColor,
       );
 
@@ -112,12 +108,11 @@ function AsciiImage(props: ImageProps) {
 }
 
 async function toAscii(
-  data: Buffer,
-  width: number,
-  height: number,
+  info: Bitmap,
   channels: number,
   colored: boolean = true,
 ) {
+  const { width, height, data } = info;
   // ascii characters ordered by brightness
   const ascii_chars =
     "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";

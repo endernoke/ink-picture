@@ -8,6 +8,7 @@ import {
 } from "../../context/TerminalInfo.js";
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
+import { JimpMime } from "jimp";
 
 /**
  * Sixel Image Rendering Component
@@ -116,9 +117,9 @@ function SixelImage(props: ImageProps) {
             : undefined,
         });
 
-        image.resize({ w: width, h: height });
+        image.scaleToFit({ w: width, h: height });
 
-        const buffer = await image.getBuffer("image/png");
+        const buffer = await image.getBuffer(JimpMime.png);
 
         setActualSizeInCells({
           width: Math.ceil(image.width / terminalDimensions.cellWidth),

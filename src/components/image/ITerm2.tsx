@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Box, Text, Newline, useStdout, type DOMElement } from "ink";
-// import { backgroundContext } from "ink";
 import usePosition from "../../hooks/usePosition.js";
 import {
   useTerminalDimensions,
@@ -8,6 +7,7 @@ import {
 } from "../../context/TerminalInfo.js";
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
+import { JimpMime } from "jimp";
 
 /**
  * ITerm2 Image Rendering Component
@@ -116,7 +116,7 @@ function ITerm2Image(props: ImageProps) {
             : undefined,
         });
 
-        const buffer = await image.getBuffer("image/png");
+        const buffer = await image.getBuffer(JimpMime.png);
 
         setActualSizeInCells({
           width: Math.ceil(width / terminalDimensions.cellWidth),

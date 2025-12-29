@@ -1,12 +1,14 @@
 import { Jimp } from "jimp";
-import { JimpImg } from "../types/jimp";
+import { JimpInstance } from "jimp";
 
-export async function fetchImage(src: string): Promise<JimpImg | undefined> {
+export async function fetchImage(
+  src: string,
+): Promise<JimpInstance | undefined> {
   try {
-    const img = await Jimp.read(src);
-    return img;
+    // Should be a safe hard cast here as all default plugin behaviours should all be inside JimpInstance
+    const jimpImg = (await Jimp.read(src)) as JimpInstance;
+    return jimpImg;
   } catch (error) {
-    // TODO: LEO: wondering if it's possible to intgrate logger from instagram-cli into here
     return undefined;
   }
 }

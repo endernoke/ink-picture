@@ -4,6 +4,7 @@ import chalk from "chalk";
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
+import { Bitmap } from "jimp";
 
 /**
  * Half-Block Image Rendering Component
@@ -71,11 +72,9 @@ function HalfBlockImage(props: ImageProps) {
         specifiedHeight: propsHeight ? propsHeight * 2 : undefined,
       });
 
-      image.resize({ w: width, h: height });
+      image.scaleToFit({ w: width, h: height });
 
-      const buffer = await image.getBuffer("image/jpeg");
-
-      const output = await toHalfBlocks(buffer, width, height, 3);
+      const output = await toHalfBlocks(image.bitmap, 4);
 
       setImageOutput(output);
     };
@@ -125,12 +124,9 @@ const HALF_BLOCK = "\u2584";
  * @param imageData - Raw image data from Sharp with buffer and metadata
  * @returns Promise resolving to formatted string with colored half-block characters
  */
-async function toHalfBlocks(
-  data: Buffer,
-  width: number,
-  height: number,
-  channels: number,
-) {
+async function toHalfBlocks(info: Bitmap, channels: number) {
+  const { width, height, data } = info;
+
   let result = "";
   for (let y = 0; y < height - 1; y += 2) {
     for (let x = 0; x < width; x++) {
