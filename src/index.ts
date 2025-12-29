@@ -45,10 +45,10 @@ export {
 
 // Individual image rendering components - for advanced usage
 export { default as AsciiImage } from "./components/image/Ascii.js";
-// export { default as BrailleImage } from "./components/image/Braille.js";
-// export { default as HalfBlockImage } from "./components/image/HalfBlock.js";
-// export { default as SixelImage } from "./components/image/Sixel.js";
-//
+export { default as BrailleImage } from "./components/image/Braille.js";
+export { default as HalfBlockImage } from "./components/image/HalfBlock.js";
+export { default as SixelImage } from "./components/image/Sixel.js";
+
 // Types and interfaces
 export type { ImageProps, ImageProtocol } from "./components/image/protocol.js";
 

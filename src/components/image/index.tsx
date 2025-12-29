@@ -101,7 +101,7 @@ function Image({
     (currentProtocol: ImageProtocolName): ImageProtocolName => {
       switch (currentProtocol) {
         case "kitty":
-          return "kitty";
+          return "iterm2";
         case "iterm2":
           return "sixel";
         case "sixel":
