@@ -278,8 +278,7 @@ function ITerm2Image(props: ImageProps) {
 function toITerm2(data: Buffer, width: number, height: number) {
   const iTerm2Data =
     "\x1b]1337;File=" +
-    // optional, only used for showing progress
-    // `size=${size};` +
+    `size=${data.length};` +
     `width=${width}px;height=${height}px;` +
     `preserveAspectRatio=1;` +
     `inline=1:` +
