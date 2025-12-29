@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Box, Text, Newline, useStdout, type DOMElement } from "ink";
-// import { backgroundContext } from "ink";
 import { image2sixel } from "sixel";
 import usePosition from "../../hooks/usePosition.js";
 import {
@@ -8,8 +7,8 @@ import {
   useTerminalCapabilities,
 } from "../../context/TerminalInfo.js";
 import { type ImageProps } from "./protocol.js";
-import sharp from "sharp";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
+import { JimpMime } from "jimp";
 
 /**
  * Sixel Image Rendering Component
@@ -105,13 +104,11 @@ function SixelImage(props: ImageProps) {
         }
         setHasError(false);
 
-        const metadata = await image.metadata();
-
         const { width: maxWidth, height: maxHeight } = componentPosition;
         const { width, height } = calculateImageSize({
           maxWidth: maxWidth * terminalDimensions.cellWidth,
           maxHeight: maxHeight * terminalDimensions.cellHeight,
-          originalAspectRatio: metadata.width / metadata.height,
+          originalAspectRatio: image.width / image.height,
           specifiedWidth: propsWidth
             ? propsWidth * terminalDimensions.cellWidth
             : undefined,
@@ -120,21 +117,16 @@ function SixelImage(props: ImageProps) {
             : undefined,
         });
 
-        const resizedImage = await image
-          .resize(width, height)
-          .ensureAlpha() // node-sixel requires alpha channel to be present
-          .raw()
-          .toBuffer({ resolveWithObject: true });
+        image.scaleToFit({ w: width, h: height });
+
+        const buffer = await image.getBuffer(JimpMime.png);
+
         setActualSizeInCells({
-          width: Math.ceil(
-            resizedImage.info.width / terminalDimensions.cellWidth,
-          ),
-          height: Math.ceil(
-            resizedImage.info.height / terminalDimensions.cellHeight,
-          ),
+          width: Math.ceil(image.width / terminalDimensions.cellWidth),
+          height: Math.ceil(image.height / terminalDimensions.cellHeight),
         });
 
-        const output = await toSixel(resizedImage);
+        const output = await toSixel(buffer, width, height);
         setImageOutput(output);
       };
       generateImageOutput();
@@ -284,9 +276,7 @@ function SixelImage(props: ImageProps) {
  * @param imageData - Raw image data with buffer and metadata from Sharp
  * @returns Promise resolving to Sixel-formatted string
  */
-async function toSixel(imageData: { data: Buffer; info: sharp.OutputInfo }) {
-  const { data, info } = imageData;
-  const { width, height } = info;
+async function toSixel(data: Buffer, width: number, height: number) {
   const u8Data = new Uint8Array(data);
 
   const sixelData = image2sixel(u8Data, width, height);

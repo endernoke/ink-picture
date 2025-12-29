@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Box, Text, Newline, useStdout, type DOMElement } from "ink";
-// import { backgroundContext } from "ink";
 import usePosition from "../../hooks/usePosition.js";
 import {
   useTerminalDimensions,
@@ -8,7 +7,7 @@ import {
 } from "../../context/TerminalInfo.js";
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
-import sharp from "sharp";
+import { JimpMime } from "jimp";
 
 /**
  * ITerm2 Image Rendering Component
@@ -104,13 +103,11 @@ function ITerm2Image(props: ImageProps) {
         }
         setHasError(false);
 
-        const metadata = await image.metadata();
-
         const { width: maxWidth, height: maxHeight } = componentPosition;
         const { width, height } = calculateImageSize({
           maxWidth: maxWidth * terminalDimensions.cellWidth,
           maxHeight: maxHeight * terminalDimensions.cellHeight,
-          originalAspectRatio: metadata.width / metadata.height,
+          originalAspectRatio: image.width / image.height,
           specifiedWidth: propsWidth
             ? propsWidth * terminalDimensions.cellWidth
             : undefined,
@@ -119,15 +116,14 @@ function ITerm2Image(props: ImageProps) {
             : undefined,
         });
 
-        const resizedImage = await image
-          .png() // iTerm2 expects a FILE, not raw pixel data
-          .toBuffer({ resolveWithObject: true });
+        const buffer = await image.getBuffer(JimpMime.png);
+
         setActualSizeInCells({
           width: Math.ceil(width / terminalDimensions.cellWidth),
           height: Math.ceil(height / terminalDimensions.cellHeight),
         });
 
-        const output = toITerm2(resizedImage, { width, height });
+        const output = toITerm2(buffer, width, height);
         setImageOutput(output);
       };
       generateImageOutput();
@@ -269,7 +265,7 @@ function ITerm2Image(props: ImageProps) {
 /**
  * Converts processed image data to ITerm2 format.
  *
- * This function takes raw RGBA image data from Sharp and converts it to
+ * This function takes raw RGBA image data from Jimp and converts it to
  * the ITerm2 graphics format using the node-iTerm2 library. The resulting
  * string contains escape sequences that can be written directly to a
  * terminal that supports ITerm2 graphics.
@@ -279,16 +275,10 @@ function ITerm2Image(props: ImageProps) {
  * @param imageData - Raw image data with buffer and metadata from Sharp
  * @returns ITerm2-formatted string
  */
-function toITerm2(
-  imageData: { data: Buffer; info: sharp.OutputInfo },
-  options: { width: number; height: number },
-) {
-  const { data, info } = imageData;
-  const { width, height } = options;
-
+function toITerm2(data: Buffer, width: number, height: number) {
   const iTerm2Data =
     "\x1b]1337;File=" +
-    `size=${info.size};` +
+    `size=${data.length};` +
     `width=${width}px;height=${height}px;` +
     `preserveAspectRatio=1;` +
     `inline=1:` +

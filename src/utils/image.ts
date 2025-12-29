@@ -1,25 +1,14 @@
-import fetch from "node-fetch";
-import sharp from "sharp";
+import { Jimp } from "jimp";
+import { JimpInstance } from "jimp";
 
 export async function fetchImage(
   src: string,
-): Promise<sharp.Sharp | undefined> {
+): Promise<JimpInstance | undefined> {
   try {
-    let imageBuffer: Buffer;
-    if (src.startsWith("http")) {
-      const response = await fetch(src);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
-      }
-      imageBuffer = Buffer.from(await response.arrayBuffer());
-    } else {
-      // Assume local file path
-      imageBuffer = await sharp(src).toBuffer();
-    }
-
-    return sharp(imageBuffer);
-  } catch {
-    // console.error('Failed to fetch image:', error);
+    // Should be a safe hard cast here as all default plugin behaviours should all be inside JimpInstance
+    const jimpImg = (await Jimp.read(src)) as JimpInstance;
+    return jimpImg;
+  } catch (error) {
     return undefined;
   }
 }

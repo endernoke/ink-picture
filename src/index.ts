@@ -51,7 +51,8 @@ export { default as SixelImage } from "./components/image/Sixel.js";
 
 // Types and interfaces
 export type { ImageProps, ImageProtocol } from "./components/image/protocol.js";
-export type { ImageProtocolName } from "./components/image/index.js";
+
+export type { ImageProtocolName } from "./types/image.js";
 
 export type {
   TerminalInfo,
