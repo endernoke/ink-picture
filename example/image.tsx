@@ -7,14 +7,26 @@ import {
   useTerminalCapabilities,
 } from "../src/context/TerminalInfo.js";
 
-// Demo image - a simple test image that should work reliably
-// const FETCH_DEMO_IMAGE = "https://sipi.usc.edu/database/preview/misc/4.1.05.png";
-// const FULL_IMAGE = "example/images/full.jpeg";
-// const PARTIAL_IMAGE = "example/images/partial.jpeg";
-const PARTIAL_IMAGE2 = "example/images/partial2.jpeg";
-const DEMO_IMAGE = PARTIAL_IMAGE2;
+const FETCH_DEMO_IMAGE =
+  "https://sipi.usc.edu/database/preview/misc/4.1.05.png";
 
-const ALLOW_PARTIAL = true;
+function getImagePath(): string {
+  const args = process.argv.slice(2);
+  if (args.length > 0 && args[0].startsWith("--img=")) {
+    return args[0].replace("--img=", "");
+  }
+  return FETCH_DEMO_IMAGE;
+}
+
+function getAllowPartial() {
+  const args = process.argv.slice(3);
+  return args.length > 0 && args[0].startsWith("--partial");
+}
+
+const DEMO_IMAGE = getImagePath();
+const ALLOW_PARTIAL = getAllowPartial();
+
+console.log(DEMO_IMAGE, ALLOW_PARTIAL);
 
 type ProtocolConfig = {
   name: string;

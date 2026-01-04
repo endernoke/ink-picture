@@ -20,6 +20,7 @@
   "scripts": {
     "format": "prettier --write .",
     "example": "node --loader=ts-node/esm --no-warnings example/image.tsx",
+    "example:partial": "node --loader=ts-node/esm --no-warnings example/image.tsx --img=example/images/partial.jpeg --partial",
     "test": "tsc --noEmit && eslint . && FORCE_COLOR=1 ava",
     "build": "tsc",
     "prepare": "husky",
