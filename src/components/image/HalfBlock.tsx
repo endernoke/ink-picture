@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Box, Text, Newline, measureElement, type DOMElement } from "ink";
 import chalk from "chalk";
-import sharp from "sharp";
-import { type ImageProps } from "./protocol.js";
-import { fetchImage, calculateImageSize } from "../../utils/image.js";
+import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
+import React, { useEffect, useRef, useState } from "react";
+import type sharp from "sharp";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
+import { calculateImageSize, fetchImage } from "../../utils/image.js";
+import type { ImageProps } from "./protocol.js";
 
 /**
  * Half-Block Image Rendering Component
@@ -39,6 +39,7 @@ function HalfBlockImage(props: ImageProps) {
     src,
     width: propsWidth,
     height: propsHeight,
+    allowPartial,
   } = props;
 
   // Detect support and notify parent
@@ -53,7 +54,7 @@ function HalfBlockImage(props: ImageProps) {
 
   useEffect(() => {
     const generateImageOutput = async () => {
-      const image = await fetchImage(src);
+      const image = await fetchImage(src, allowPartial);
       if (!image) {
         setHasError(true);
         return;
@@ -83,7 +84,7 @@ function HalfBlockImage(props: ImageProps) {
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [src, propsWidth, propsHeight]);
+  }, [src, propsWidth, propsHeight, allowPartial]);
 
   return (
     <Box ref={containerRef} flexDirection="column" flexGrow={1}>

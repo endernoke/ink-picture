@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Box, Text, Newline, measureElement, type DOMElement } from "ink";
 import chalk from "chalk";
+import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
+import React, { useEffect, useRef, useState } from "react";
 import sharp from "sharp";
-import { type ImageProps } from "./protocol.js";
-import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
+import { calculateImageSize, fetchImage } from "../../utils/image.js";
+import { type ImageProps } from "./protocol.js";
 
 /**
  * ASCII Image Rendering Component
