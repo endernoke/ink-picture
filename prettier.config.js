@@ -1,5 +1,3 @@
-// import { type Config } from "prettier";
-
 const config = {
   trailingComma: "all",
   semi: true,

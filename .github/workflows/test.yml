@@ -1,0 +1,51 @@
+name: linting and tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      [
+        "**.js",
+        "**.ts",
+        "**.jsx",
+        "**.tsx",
+        "**.json",
+        "**.md",
+        "**.yml",
+        "**.yaml",
+      ]
+  pull_request:
+    branches:
+      - main
+    paths:
+      [
+        "**.js",
+        "**.ts",
+        "**.jsx",
+        "**.tsx",
+        "**.json",
+        "**.md",
+        "**.yml",
+        "**.yaml",
+      ]
+
+jobs:
+  format:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Run prettier + linting + tests
+        run: npm test
