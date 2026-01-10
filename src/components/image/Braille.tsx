@@ -149,7 +149,7 @@ async function toBraille(info: Bitmap, channels: number) {
         const r = data[index] as number;
         const g = data[index + 1] as number;
         const b = data[index + 2] as number;
-        const a = channels === 4 ? (data[index + 3] as number) : 1;
+        const a = channels === 4 ? (data[index + 3] as number) / 255 : 1;
         return { r, g, b, a };
       };
 
