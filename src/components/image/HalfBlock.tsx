@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, Text, Newline, measureElement, type DOMElement } from "ink";
 import chalk from "chalk";
-import sharp from "sharp";
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
+import { Bitmap } from "jimp";
 
 /**
  * Half-Block Image Rendering Component
@@ -60,8 +60,6 @@ function HalfBlockImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const metadata = await image.metadata();
-
       if (!containerRef.current) return;
       const { width: maxWidth, height: maxHeight } = measureElement(
         containerRef.current,
@@ -69,17 +67,16 @@ function HalfBlockImage(props: ImageProps) {
       const { width, height } = calculateImageSize({
         maxWidth: maxWidth,
         maxHeight: maxHeight * 2,
-        originalAspectRatio: metadata.width / metadata.height,
+        originalAspectRatio: image.width / image.height,
         specifiedWidth: propsWidth,
         specifiedHeight: propsHeight ? propsHeight * 2 : undefined,
+        alignment: { height: 2 }, // Ensure even height for half-block pairs
       });
 
-      const resizedImage = await image
-        .resize(width, height)
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+      image.resize({ w: width, h: height });
 
-      const output = await toHalfBlocks(resizedImage);
+      const output = await toHalfBlocks(image.bitmap, 4);
+
       setImageOutput(output);
     };
     generateImageOutput();
@@ -128,15 +125,11 @@ const HALF_BLOCK = "\u2584";
  * @param imageData - Raw image data from Sharp with buffer and metadata
  * @returns Promise resolving to formatted string with colored half-block characters
  */
-async function toHalfBlocks(imageData: {
-  data: Buffer;
-  info: sharp.OutputInfo;
-}) {
-  const { data, info } = imageData;
-  const { width, height, channels } = info;
+async function toHalfBlocks(info: Bitmap, channels: number) {
+  const { width, height, data } = info;
 
   let result = "";
-  for (let y = 0; y < height - 1; y += 2) {
+  for (let y = 0; y < height; y += 2) {
     for (let x = 0; x < width; x++) {
       const topPixelIndex = (y * width + x) * channels;
       const bottomPixelIndex = ((y + 1) * width + x) * channels;

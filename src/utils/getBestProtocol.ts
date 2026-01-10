@@ -1,9 +1,8 @@
 import { TerminalCapabilities } from "../context/TerminalInfo.js";
+import { ImageProtocolName } from "../types/image.js";
 
 // Heuristic for selecting the best image protocol based on terminal capabilities
-function getBestProtocol(
-  caps: TerminalCapabilities,
-): "sixel" | "kitty" | "iterm2" | "braille" | "halfBlock" | "ascii" {
+function getBestProtocol(caps: TerminalCapabilities): ImageProtocolName {
   if (
     process.env["TERM_PROGRAM"] === "iTerm.app" &&
     caps.supportsITerm2Graphics

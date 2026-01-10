@@ -9,6 +9,7 @@ import {
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import generateKittyId from "../../utils/generateKittyId.js";
+import { JimpMime } from "jimp";
 
 /**
  * Kitty Image Rendering Component
@@ -98,13 +99,11 @@ function KittyImage(props: ImageProps) {
         }
         setHasError(false);
 
-        const metadata = await image.metadata();
-
         const { width: maxWidth, height: maxHeight } = componentPosition;
         const { width, height } = calculateImageSize({
           maxWidth: maxWidth * terminalDimensions.cellWidth,
           maxHeight: maxHeight * terminalDimensions.cellHeight,
-          originalAspectRatio: metadata.width / metadata.height,
+          originalAspectRatio: image.width / image.height,
           specifiedWidth: propsWidth
             ? propsWidth * terminalDimensions.cellWidth
             : undefined,
@@ -113,12 +112,12 @@ function KittyImage(props: ImageProps) {
             : undefined,
         });
 
-        const resizedImage = image.resize(width, height);
+        image.scaleToFit({ w: width, h: height });
 
         try {
           const imageId = generateKittyId();
+          const data = await image.getBuffer(JimpMime.png);
 
-          const data = await resizedImage.png().toBuffer();
           const chunkSize = 4096; // Kitty protocol pixel data max chunk size
           const base64Data = data.toString("base64");
 

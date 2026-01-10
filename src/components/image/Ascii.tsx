@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, Text, Newline, measureElement, type DOMElement } from "ink";
 import chalk from "chalk";
-import sharp from "sharp";
 import { type ImageProps } from "./protocol.js";
 import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
+import { Bitmap, JimpMime } from "jimp";
 
 /**
  * ASCII Image Rendering Component
@@ -57,31 +57,33 @@ function AsciiImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const metadata = await image.metadata();
-
       if (!containerRef.current) return;
       const { width: maxWidth, height: maxHeight } = measureElement(
         containerRef.current,
       );
 
-      // Calculate target size - ASCII art is character-based, so we don't need to scale original sizes
+      // Calculate target size - terminal chars are ~2x taller than wide,
+      // so we need to adjust the aspect ratio accordingly
+      const terminalAspectRatio = 2;
       const { width, height } = calculateImageSize({
         maxWidth,
         maxHeight,
-        originalAspectRatio: metadata.width! / (metadata.height! / 2),
+        originalAspectRatio:
+          (image.bitmap.width / image.bitmap.height) * terminalAspectRatio,
         specifiedWidth: propsWidth,
-        specifiedHeight: propsHeight ? propsHeight / 2 : undefined,
+        specifiedHeight: propsHeight,
       });
 
-      const resizedImage = await image
-        .resize(width, height, { fit: "fill" })
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+      // Use resize for exact dimensions
+      image.resize({ w: width, h: height });
 
+      // jimp implements rgba for it's buffers (4 channels)
       const output = await toAscii(
-        resizedImage,
+        image.bitmap,
+        4,
         terminalCapabilities?.supportsColor,
       );
+
       setImageOutput(output);
     };
     generateImageOutput();
@@ -109,15 +111,11 @@ function AsciiImage(props: ImageProps) {
 }
 
 async function toAscii(
-  imageData: {
-    data: Buffer;
-    info: sharp.OutputInfo;
-  },
+  info: Bitmap,
+  channels: number,
   colored: boolean = true,
 ) {
-  const { data, info } = imageData;
-  const { width, height, channels } = info;
-
+  const { width, height, data } = info;
   // ascii characters ordered by brightness
   const ascii_chars =
     "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
