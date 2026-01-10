@@ -70,9 +70,10 @@ function HalfBlockImage(props: ImageProps) {
         originalAspectRatio: image.width / image.height,
         specifiedWidth: propsWidth,
         specifiedHeight: propsHeight ? propsHeight * 2 : undefined,
+        alignment: { height: 2 }, // Ensure even height for half-block pairs
       });
 
-      image.scaleToFit({ w: width, h: height });
+      image.resize({ w: width, h: height });
 
       const output = await toHalfBlocks(image.bitmap, 4);
 
@@ -128,7 +129,7 @@ async function toHalfBlocks(info: Bitmap, channels: number) {
   const { width, height, data } = info;
 
   let result = "";
-  for (let y = 0; y < height - 1; y += 2) {
+  for (let y = 0; y < height; y += 2) {
     for (let x = 0; x < width; x++) {
       const topPixelIndex = (y * width + x) * channels;
       const bottomPixelIndex = ((y + 1) * width + x) * channels;

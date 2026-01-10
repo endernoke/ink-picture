@@ -76,9 +76,10 @@ function BrailleImage(props: ImageProps) {
         originalAspectRatio: image.width / image.height,
         specifiedWidth: propsWidth ? propsWidth * 2 : undefined,
         specifiedHeight: propsHeight ? propsHeight * 4 : undefined,
+        alignment: { width: 2, height: 4 }, // Ensure proper braille cell alignment (2x4 grid)
       });
 
-      image.scaleToFit({ w: width, h: height });
+      image.resize({ w: width, h: height });
 
       // in jimp buffers uses RGBA
       const output = await toBraille(image.bitmap, 4);
@@ -134,8 +135,8 @@ async function toBraille(info: Bitmap, channels: number) {
   const { width, height, data } = info;
 
   let result = "";
-  for (let y = 0; y < height - 3; y += 4) {
-    for (let x = 0; x < width - 1; x += 2) {
+  for (let y = 0; y < height; y += 4) {
+    for (let x = 0; x < width; x += 2) {
       const dot1Index = (y * width + x) * channels;
       const dot2Index = ((y + 1) * width + x) * channels;
       const dot3Index = ((y + 2) * width + x) * channels;

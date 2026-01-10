@@ -62,17 +62,20 @@ function AsciiImage(props: ImageProps) {
         containerRef.current,
       );
 
-      // Calculate target size - ASCII art is character-based, so we don't need to scale original sizes
+      // Calculate target size - terminal chars are ~2x taller than wide,
+      // so we need to adjust the aspect ratio accordingly
+      const terminalAspectRatio = 2;
       const { width, height } = calculateImageSize({
         maxWidth,
         maxHeight,
-        originalAspectRatio: image.bitmap.width / (image.bitmap.height / 2),
+        originalAspectRatio:
+          (image.bitmap.width / image.bitmap.height) * terminalAspectRatio,
         specifiedWidth: propsWidth,
-        specifiedHeight: propsHeight ? propsHeight / 2 : undefined,
+        specifiedHeight: propsHeight,
       });
 
-      // resized in place
-      image.scaleToFit({ w: width, h: height });
+      // Use resize for exact dimensions
+      image.resize({ w: width, h: height });
 
       // jimp implements rgba for it's buffers (4 channels)
       const output = await toAscii(

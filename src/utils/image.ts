@@ -19,59 +19,67 @@ export function calculateImageSize({
   originalAspectRatio,
   specifiedWidth,
   specifiedHeight,
+  alignment = { width: 1, height: 1 },
 }: {
   maxWidth: number;
   maxHeight: number;
   originalAspectRatio: number;
   specifiedWidth?: number;
   specifiedHeight?: number;
+  alignment?: { width?: number; height?: number };
 }): { width: number; height: number } {
+  let width: number;
+  let height: number;
+
   // Both width and height specified
   if (specifiedWidth && specifiedHeight) {
-    const width = Math.min(specifiedWidth, maxWidth);
-    const height = Math.min(specifiedHeight, maxHeight);
-    return { width: Math.round(width), height: Math.round(height) };
+    width = Math.min(specifiedWidth, maxWidth);
+    height = Math.min(specifiedHeight, maxHeight);
   }
-
   // Only width specified
-  if (specifiedWidth) {
-    let width = Math.min(specifiedWidth, maxWidth);
-    let height = width / originalAspectRatio;
+  else if (specifiedWidth) {
+    width = Math.min(specifiedWidth, maxWidth);
+    height = width / originalAspectRatio;
 
     if (height > maxHeight) {
       height = maxHeight;
       width = height * originalAspectRatio;
     }
-
-    return { width: Math.round(width), height: Math.round(height) };
   }
-
   // Only height specified
-  if (specifiedHeight) {
-    let height = Math.min(specifiedHeight, maxHeight);
-    let width = height * originalAspectRatio;
+  else if (specifiedHeight) {
+    height = Math.min(specifiedHeight, maxHeight);
+    width = height * originalAspectRatio;
+
+    if (width > maxWidth) {
+      width = maxWidth;
+      height = width / originalAspectRatio;
+    }
+  }
+  // No dimensions specified - scale to fit while maintaining aspect ratio
+  else {
+    height = maxHeight;
+    width = height * originalAspectRatio;
 
     if (width > maxWidth) {
       width = maxWidth;
       height = width / originalAspectRatio;
     }
 
-    return { width: Math.round(width), height: Math.round(height) };
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * originalAspectRatio;
+    }
   }
 
-  // No dimensions specified - scale to fit while maintaining aspect ratio
-  let height = maxHeight;
-  let width = height * originalAspectRatio;
+  // Align dimensions to cell boundaries
+  const alignW = alignment.width || 1;
+  const alignH = alignment.height || 1;
+  const alignedWidth = Math.floor(width / alignW) * alignW;
+  const alignedHeight = Math.floor(height / alignH) * alignH;
 
-  if (width > maxWidth) {
-    width = maxWidth;
-    height = width / originalAspectRatio;
-  }
-
-  if (height > maxHeight) {
-    height = maxHeight;
-    width = height * originalAspectRatio;
-  }
-
-  return { width: Math.round(width), height: Math.round(height) };
+  return {
+    width: Math.max(alignW, Math.round(alignedWidth)),
+    height: Math.max(alignH, Math.round(alignedHeight)),
+  };
 }
