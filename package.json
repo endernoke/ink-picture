@@ -50,15 +50,15 @@
     "terminal"
   ],
   "devDependencies": {
-    "@types/node": "^24.8.1",
+    "@types/node": "^25.3.0",
     "@types/node-fetch": "^2.6.13",
     "@types/react": "^19.1.12",
     "ava": "^6.4.1",
-    "eslint": "^9.33.0",
+    "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "husky": "^9.1.7",
     "ink": "^6.2.2",
     "ink-testing-library": "^4.0.0",
@@ -87,7 +87,7 @@
   "dependencies": {
     "chalk": "^5.6.0",
     "is-unicode-supported": "^2.1.0",
-    "iterm2-version": "^5.0.0",
+    "iterm2-version": "^6.0.0",
     "node-fetch": "^3.3.2",
     "sharp": "^0.34.3",
     "sixel": "^0.16.0",
