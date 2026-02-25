@@ -1,5 +1,5 @@
-import React from "react";
 import { render, Text } from "ink";
+import React from "react";
 import { TerminalInfoProvider } from "../../src/context/TerminalInfo.js";
 
 const CtrlCTest = () => {

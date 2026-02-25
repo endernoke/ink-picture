@@ -1,13 +1,13 @@
-import React, { useState, useCallback } from "react";
-import { type ImageProps } from "./protocol.js";
-import AsciiImage from "./Ascii.js";
-import HalfBlockImage from "./HalfBlock.js";
-import BrailleImage from "./Braille.js";
-import SixelImage from "./Sixel.js";
-import ITerm2Image from "./ITerm2.js";
-import KittyImage from "./Kitty.js";
+import React, { useCallback, useState } from "react";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
 import { getBestProtocol } from "../../utils/getBestProtocol.js";
+import AsciiImage from "./Ascii.js";
+import BrailleImage from "./Braille.js";
+import HalfBlockImage from "./HalfBlock.js";
+import ITerm2Image from "./ITerm2.js";
+import KittyImage from "./Kitty.js";
+import type { ImageProps } from "./protocol.js";
+import SixelImage from "./Sixel.js";
 
 const imageProtocols = {
   ascii: AsciiImage,
@@ -28,7 +28,7 @@ export type ImageProtocolName = keyof typeof imageProtocols;
  */
 const ImageRenderer = (props: ImageProps & { protocol: ImageProtocolName }) => {
   const ProtocolComponent =
-    imageProtocols[props.protocol] || imageProtocols["ascii"];
+    imageProtocols[props.protocol] || imageProtocols.ascii;
   return <ProtocolComponent {...props} />;
 };
 

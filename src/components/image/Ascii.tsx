@@ -1,10 +1,10 @@
 import chalk from "chalk";
 import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
 import React, { useEffect, useRef, useState } from "react";
-import sharp from "sharp";
+import type sharp from "sharp";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
 import { calculateImageSize, fetchImage } from "../../utils/image.js";
-import { type ImageProps } from "./protocol.js";
+import type { ImageProps } from "./protocol.js";
 
 /**
  * ASCII Image Rendering Component
@@ -91,9 +91,7 @@ function AsciiImage(props: ImageProps) {
   return (
     <Box ref={containerRef} flexDirection="column" flexGrow={1}>
       {imageOutput ? (
-        imageOutput
-          .split("\n")
-          .map((line, index) => <Text key={index}>{line}</Text>)
+        imageOutput.split("\n").map((line) => <Text key={line}>{line}</Text>)
       ) : (
         <Box flexDirection="column" alignItems="center" justifyContent="center">
           {hasError && (
@@ -134,7 +132,7 @@ async function toAscii(
       const a = channels === 4 ? (data[pixelIndex + 3] as number) : 255;
 
       // this is different from perceived luminance
-      const intensity = r + g + b + a == 0 ? 0 : (r + g + b + a) / (255 * 4);
+      const intensity = r + g + b + a === 0 ? 0 : (r + g + b + a) / (255 * 4);
       const pixel_char =
         ascii_chars[
           ascii_chars.length -

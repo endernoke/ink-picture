@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, type RefObject } from "react";
-import { type DOMElement } from "ink";
+import type { DOMElement } from "ink";
+import { type RefObject, useCallback, useEffect, useState } from "react";
 
 export type Position = {
   /**

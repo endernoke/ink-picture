@@ -31,32 +31,28 @@
  * ```
  */
 
-// Main Image component - the primary export
-export { default } from "./components/image/index.js";
-
-// Terminal info context and provider - required for Image component
-export {
-  TerminalInfoProvider,
-  TerminalInfoContext,
-  useTerminalInfo,
-  useTerminalDimensions,
-  useTerminalCapabilities,
-} from "./context/TerminalInfo.js";
-
 // Individual image rendering components - for advanced usage
 export { default as AsciiImage } from "./components/image/Ascii.js";
 export { default as BrailleImage } from "./components/image/Braille.js";
 export { default as HalfBlockImage } from "./components/image/HalfBlock.js";
-export { default as SixelImage } from "./components/image/Sixel.js";
-
+export type { ImageProtocolName } from "./components/image/index.js";
+// Main Image component - the primary export
+export { default } from "./components/image/index.js";
 // Types and interfaces
 export type { ImageProps, ImageProtocol } from "./components/image/protocol.js";
-export type { ImageProtocolName } from "./components/image/index.js";
-
+export { default as SixelImage } from "./components/image/Sixel.js";
 export type {
-  TerminalInfo,
-  TerminalDimensions,
   TerminalCapabilities,
+  TerminalDimensions,
+  TerminalInfo,
+} from "./context/TerminalInfo.js";
+// Terminal info context and provider - required for Image component
+export {
+  TerminalInfoContext,
+  TerminalInfoProvider,
+  useTerminalCapabilities,
+  useTerminalDimensions,
+  useTerminalInfo,
 } from "./context/TerminalInfo.js";
 
 // Utility hooks

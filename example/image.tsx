@@ -1,5 +1,5 @@
-import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Box, render, Text, useApp, useInput } from "ink";
 import React from "react";
 import Image from "../src/components/image/index.js";
@@ -104,6 +104,7 @@ const protocols: ProtocolConfig[] = [
 
 function ProtocolDemo({ config }: { config: ProtocolConfig }) {
   const capabilities = useTerminalCapabilities();
+  // biome-ignore lint/style/noNonNullAssertion: monkey patch
   const supportInfo = config.getSupportStatus(capabilities!);
 
   return (
@@ -171,13 +172,13 @@ function ProtocolShowcase() {
 
         <Box flexDirection="column" marginBottom={1}>
           <Box flexDirection="row">
-            {protocols.slice(0, 3).map((config, index) => (
-              <ProtocolDemo key={index} config={config} />
+            {protocols.slice(0, 3).map((config) => (
+              <ProtocolDemo key={config.protocol} config={config} />
             ))}
           </Box>
           <Box flexDirection="row">
-            {protocols.slice(3).map((config, index) => (
-              <ProtocolDemo key={index} config={config} />
+            {protocols.slice(3).map((config) => (
+              <ProtocolDemo key={config.protocol} config={config} />
             ))}
           </Box>
         </Box>

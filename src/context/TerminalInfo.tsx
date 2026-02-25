@@ -1,37 +1,37 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
 import { useStdin, useStdout } from "ink";
-import queryEscapeSequence from "../utils/queryEscapeSequence.js";
-import supportsColor from "supports-color";
 import checkIsUnicodeSupported from "is-unicode-supported";
 import iterm2Version from "iterm2-version";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import supportsColor from "supports-color";
+import queryEscapeSequence from "../utils/queryEscapeSequence.js";
 
 function supportsITerm2(context?: { supportsSixelGraphics: boolean }) {
-  if (process.env["TERM_PROGRAM"] === "iTerm.app") {
+  if (process.env.TERM_PROGRAM === "iTerm.app") {
     const version = iterm2Version();
     if (!version || Number(version[0]) < 3) return false;
     return true;
-  } else if (process.env["TERM_PROGRAM"] === "WezTerm") {
+  } else if (process.env.TERM_PROGRAM === "WezTerm") {
     // WezTerm is compatible with iTerm2 inline images starting from version 20220319-142410-0fcdea07
     // See https://wezterm.org/imgcat.html
-    const version = process.env["TERM_PROGRAM_VERSION"];
+    const version = process.env.TERM_PROGRAM_VERSION;
     if (!version) return false;
     const date = parseInt(version.split("-")[0]);
     if (!Number.isNaN(date) && date >= 20220319) {
       return true;
     }
-  } else if (process.env["KONSOLE_VERSION"]) {
+  } else if (process.env.KONSOLE_VERSION) {
     // Konsole supports iTerm2 inline images since some time around 2022
     // See https://www.reddit.com/r/kde/comments/ul0irg/konsole_2204_with_sixel_support_is_out_of_beta_now/
-    const version = process.env["KONSOLE_VERSION"];
+    const version = process.env.KONSOLE_VERSION;
     if (!version) return false;
     const date = parseInt(version);
     if (!Number.isNaN(date) && date >= 220400) {
       return true;
     }
-  } else if (process.env["TERM_PROGRAM"] === "rio") {
+  } else if (process.env.TERM_PROGRAM === "rio") {
     // Rio terminal supports iTerm2 inline images since version 0.1.13
     // See https://github.com/raphamorim/rio/releases/tag/v0.1.13
-    const version = process.env["TERM_PROGRAM_VERSION"];
+    const version = process.env.TERM_PROGRAM_VERSION;
     if (!version) return false;
     const [major, minor, patch] = version
       .split(".")
@@ -46,14 +46,14 @@ function supportsITerm2(context?: { supportsSixelGraphics: boolean }) {
     ) {
       return true;
     }
-  } else if (process.env["TERM_PROGRAM"] === "vscode") {
+  } else if (process.env.TERM_PROGRAM === "vscode") {
     // VS Code's integrated terminal can be configured to support Sixel and iTerm2 graphics
     // If Sixel is supported, iTerm2 images are also supported
     if (context?.supportsSixelGraphics) {
       return true;
     }
-  } else if (process.env["TERM_PROGRAM"] === "WarpTerminal") {
-    const version = process.env["TERM_PROGRAM_VERSION"];
+  } else if (process.env.TERM_PROGRAM === "WarpTerminal") {
+    const version = process.env.TERM_PROGRAM_VERSION;
     // Supported since v0.2025.03.05.08.02
     // See https://docs.warp.dev/getting-started/changelog
     if (version) {
@@ -196,7 +196,7 @@ export const TerminalInfoProvider = ({
         }
         // example format: "\x1b[4;1012;1419t"
         const parsedResponse =
-          // eslint-disable-next-line no-control-regex
+          // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally parsing response containing control characters
           cellPixelDimensionsResponse.match(/\x1b\[6;(\d+);(\d+);?t/);
         if (!parsedResponse || !parsedResponse[1] || !parsedResponse[2]) {
           throw new Error();
@@ -222,7 +222,7 @@ export const TerminalInfoProvider = ({
         }
         // example format: "\x1b[4;1012;1419t"
         const parsedResponse =
-          // eslint-disable-next-line no-control-regex
+          // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally parsing response containing control characters
           terminalPixelDimensionsResponse.match(/\x1b\[4;(\d+);(\d+);?t/);
         if (!parsedResponse || !parsedResponse[1] || !parsedResponse[2]) {
           return undefined;
@@ -263,7 +263,7 @@ export const TerminalInfoProvider = ({
         setRawMode,
       );
       let supportsKittyGraphics = false;
-      if (kittyResponse && kittyResponse.includes("OK")) {
+      if (kittyResponse?.includes("OK")) {
         supportsKittyGraphics = true;
       }
       // Response will include '4' if sixel is supported
@@ -275,10 +275,9 @@ export const TerminalInfoProvider = ({
       );
       let supportsSixelGraphics = false;
       if (
-        deviceAttributesResponse &&
-        deviceAttributesResponse.endsWith("c") &&
+        deviceAttributesResponse?.endsWith("c") &&
         deviceAttributesResponse
-          .slice(0, -1)
+          ?.slice(0, -1)
           .split(";")
           .find((attr) => attr === "4")
       ) {
@@ -302,14 +301,14 @@ export const TerminalInfoProvider = ({
           const match = reportCellSizeResponse.match(
             /ReportCellSize=([\d.]+);([\d.]+);([\d.]+)/,
           );
-          if (match && match[1] && match[2] && match[3]) {
+          if (match?.[1] && match?.[2] && match?.[3]) {
             const width = parseFloat(match[2]);
             const height = parseFloat(match[1]);
             const parsedScale = parseFloat(match[3]);
             if (
               !Number.isNaN(width) &&
               !Number.isNaN(height) &&
-              !isNaN(parsedScale)
+              !Number.isNaN(parsedScale)
             ) {
               // Use the reported cell width/height to adjust our cell dimensions
               cellDimensions = { width, height };
