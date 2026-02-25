@@ -18,9 +18,9 @@ function queryEscapeSequence(
 ) {
   return new Promise<string | undefined>((resolve) => {
     const responseTimeout = 100;
-    let responseTimeoutId: NodeJS.Timeout | undefined = undefined;
+    let responseTimeoutId: NodeJS.Timeout | undefined;
     const timeoutBetweenReplies = 50;
-    let timeoutBetweenRepliesId: NodeJS.Timeout | undefined = undefined;
+    let timeoutBetweenRepliesId: NodeJS.Timeout | undefined;
     let runningReply = "";
 
     setRawMode(true);

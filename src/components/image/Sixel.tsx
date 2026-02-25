@@ -93,64 +93,61 @@ function SixelImage(props: ImageProps) {
    * 5. Converts processed image data to Sixel format
    * 6. Tracks actual size in terminal cells for cleanup purposes
    */
-  useEffect(
-    () => {
-      const generateImageOutput = async () => {
-        if (!componentPosition) return;
-        if (!terminalDimensions) return;
+  useEffect(() => {
+    const generateImageOutput = async () => {
+      if (!componentPosition) return;
+      if (!terminalDimensions) return;
 
-        const image = await fetchImage(src, allowPartial);
-        if (!image) {
-          setHasError(true);
-          return;
-        }
-        setHasError(false);
+      const image = await fetchImage(src, allowPartial);
+      if (!image) {
+        setHasError(true);
+        return;
+      }
+      setHasError(false);
 
-        const metadata = await image.metadata();
+      const metadata = await image.metadata();
 
-        const { width: maxWidth, height: maxHeight } = componentPosition;
-        const { width, height } = calculateImageSize({
-          maxWidth: maxWidth * terminalDimensions.cellWidth,
-          maxHeight: maxHeight * terminalDimensions.cellHeight,
-          originalAspectRatio: metadata.width / metadata.height,
-          specifiedWidth: propsWidth
-            ? propsWidth * terminalDimensions.cellWidth
-            : undefined,
-          specifiedHeight: propsHeight
-            ? propsHeight * terminalDimensions.cellHeight
-            : undefined,
-        });
+      const { width: maxWidth, height: maxHeight } = componentPosition;
+      const { width, height } = calculateImageSize({
+        maxWidth: maxWidth * terminalDimensions.cellWidth,
+        maxHeight: maxHeight * terminalDimensions.cellHeight,
+        originalAspectRatio: metadata.width / metadata.height,
+        specifiedWidth: propsWidth
+          ? propsWidth * terminalDimensions.cellWidth
+          : undefined,
+        specifiedHeight: propsHeight
+          ? propsHeight * terminalDimensions.cellHeight
+          : undefined,
+      });
 
-        const resizedImage = await image
-          .resize(width, height)
-          .ensureAlpha() // node-sixel requires alpha channel to be present
-          .raw()
-          .toBuffer({ resolveWithObject: true });
-        setActualSizeInCells({
-          width: Math.ceil(
-            resizedImage.info.width / terminalDimensions.cellWidth,
-          ),
-          height: Math.ceil(
-            resizedImage.info.height / terminalDimensions.cellHeight,
-          ),
-        });
+      const resizedImage = await image
+        .resize(width, height)
+        .ensureAlpha() // node-sixel requires alpha channel to be present
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      setActualSizeInCells({
+        width: Math.ceil(
+          resizedImage.info.width / terminalDimensions.cellWidth,
+        ),
+        height: Math.ceil(
+          resizedImage.info.height / terminalDimensions.cellHeight,
+        ),
+      });
 
-        const output = await toSixel(resizedImage);
-        setImageOutput(output);
-      };
-      generateImageOutput();
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      src,
-      propsWidth,
-      propsHeight,
-      componentPosition?.width,
-      componentPosition?.height,
-      terminalDimensions,
-      allowPartial,
-    ],
-  );
+      const output = await toSixel(resizedImage);
+      setImageOutput(output);
+    };
+    generateImageOutput();
+  }, [
+    src,
+    propsWidth,
+    propsHeight,
+    componentPosition,
+    componentPosition?.width,
+    componentPosition?.height,
+    terminalDimensions,
+    allowPartial,
+  ]);
 
   /**
    * Critical rendering effect for Sixel image display.
@@ -203,7 +200,7 @@ function SixelImage(props: ImageProps) {
 
     let previousRenderBoundingBox:
       | { row: number; col: number; width: number; height: number }
-      | undefined = undefined;
+      | undefined;
     const renderTimeout = setTimeout(() => {
       stdout.write("\x1b7"); // Save cursor position
       stdout.write(
@@ -301,7 +298,7 @@ async function toSixel(imageData: { data: Buffer; info: sharp.OutputInfo }) {
  * @returns ANSI escape sequence string
  */
 function cursorForward(count: number = 1) {
-  return "\x1b[" + count + "C";
+  return `\x1b[${count}C`;
 }
 
 /**
@@ -310,7 +307,7 @@ function cursorForward(count: number = 1) {
  * @returns ANSI escape sequence string
  */
 function cursorUp(count: number = 1) {
-  return "\x1b[" + count + "A";
+  return `\x1b[${count}A`;
 }
 
 export default SixelImage;

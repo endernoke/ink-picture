@@ -18,23 +18,18 @@
     "node": ">=18"
   },
   "scripts": {
-    "format": "prettier --write .",
+    "format": "biome format --write",
     "example": "node --loader=ts-node/esm --no-warnings example/image.tsx",
-    "example:partial": "node --loader=ts-node/esm --no-warnings example/image.tsx --img=example/images/partial.jpeg --partial",
-    "test": "tsc --noEmit && prettier --check . && eslint . && FORCE_COLOR=1 ava",
+    "test": "tsc --noEmit && biome ci && FORCE_COLOR=1 ava",
     "build": "tsc",
     "prepare": "husky",
     "pretest": "tsc",
-    "lint": "eslint ."
+    "lint": "biome lint"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,json,md}": [
-      "prettier --write"
-    ]
+    "*.{ts,tsx,js,jsx,json,md}": ["biome format --write"]
   },
-  "files": [
-    "build"
-  ],
+  "files": ["build"],
   "keywords": [
     "ink",
     "image",
@@ -50,25 +45,19 @@
     "terminal"
   ],
   "devDependencies": {
-    "@types/node": "^24.8.1",
+    "@biomejs/biome": "2.4.4",
+    "@types/node": "^25.3.0",
     "@types/node-fetch": "^2.6.13",
     "@types/react": "^19.1.12",
     "ava": "^6.4.1",
-    "eslint": "^9.33.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
     "husky": "^9.1.7",
-    "ink": "^6.2.2",
+    "ink": "^6.8.0",
     "ink-testing-library": "^4.0.0",
     "lint-staged": "^16.1.6",
     "node-pty": "^1.0.0",
-    "prettier": "^3.6.2",
     "react": "^19.1.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.40.0"
+    "typescript": "^5.9.2"
   },
   "peerDependencies": {
     "ink": ">=5",
@@ -80,14 +69,12 @@
       "ts": "module",
       "tsx": "module"
     },
-    "nodeArguments": [
-      "--loader=ts-node/esm"
-    ]
+    "nodeArguments": ["--loader=ts-node/esm"]
   },
   "dependencies": {
     "chalk": "^5.6.0",
     "is-unicode-supported": "^2.1.0",
-    "iterm2-version": "^5.0.0",
+    "iterm2-version": "^6.0.0",
     "node-fetch": "^3.3.2",
     "sharp": "^0.34.3",
     "sixel": "^0.16.0",

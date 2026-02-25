@@ -95,9 +95,7 @@ function BrailleImage(props: ImageProps) {
   return (
     <Box ref={containerRef} flexDirection="column" flexGrow={1}>
       {imageOutput ? (
-        imageOutput
-          .split("\n")
-          .map((line, index) => <Text key={index}>{line}</Text>)
+        imageOutput.split("\n").map((line) => <Text key={line}>{line}</Text>)
       ) : (
         <Box flexDirection="column" alignItems="center" justifyContent="center">
           {hasError && (
