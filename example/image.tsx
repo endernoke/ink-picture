@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { Box, render, Text, useApp, useInput } from "ink";
 import React from "react";
 import Image from "../src/components/image/index.js";
@@ -7,26 +9,17 @@ import {
   useTerminalCapabilities,
 } from "../src/context/TerminalInfo.js";
 
-const FETCH_DEMO_IMAGE =
-  "https://sipi.usc.edu/database/preview/misc/4.1.05.png";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function getImagePath(): string {
-  const args = process.argv.slice(2);
-  if (args.length > 0 && args[0].startsWith("--img=")) {
-    return args[0].replace("--img=", "");
-  }
-  return FETCH_DEMO_IMAGE;
+  return `${__dirname}/images/${getAllowPartial() ? "partial.jpeg" : "full.png"}`;
 }
 
 function getAllowPartial() {
-  const args = process.argv.slice(3);
+  const args = process.argv.slice(2);
   return args.length > 0 && args[0].startsWith("--partial");
 }
-
-const DEMO_IMAGE = getImagePath();
-const ALLOW_PARTIAL = getAllowPartial();
-
-console.log(DEMO_IMAGE, ALLOW_PARTIAL);
 
 type ProtocolConfig = {
   name: string;
@@ -138,10 +131,10 @@ function ProtocolDemo({ config }: { config: ProtocolConfig }) {
       >
         {supportInfo.supported ? (
           <Image
-            src={DEMO_IMAGE}
+            src={getImagePath()}
             protocol={config.protocol}
             alt={`${config.name} demo`}
-            allowPartial={ALLOW_PARTIAL}
+            allowPartial={getAllowPartial()}
           />
         ) : (
           <Box

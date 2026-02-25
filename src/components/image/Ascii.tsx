@@ -36,6 +36,7 @@ function AsciiImage(props: ImageProps) {
     src,
     width: propsWidth,
     height: propsHeight,
+    allowPartial,
   } = props;
 
   // Detect support and notify parent
@@ -50,7 +51,7 @@ function AsciiImage(props: ImageProps) {
 
   useEffect(() => {
     const generateImageOutput = async () => {
-      const image = await fetchImage(src);
+      const image = await fetchImage(src, allowPartial);
       if (!image) {
         setHasError(true);
         return;
@@ -85,7 +86,7 @@ function AsciiImage(props: ImageProps) {
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [src, propsWidth, propsHeight, terminalCapabilities]);
+  }, [src, propsWidth, propsHeight, terminalCapabilities, allowPartial]);
 
   return (
     <Box ref={containerRef} flexDirection="column" flexGrow={1}>
