@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
-import { Box, Text, Newline, useStdout, type DOMElement } from "ink";
+import { Box, type DOMElement, Newline, Text, useStdout } from "ink";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type sharp from "sharp";
 // import { backgroundContext } from "ink";
 import { image2sixel } from "sixel";
-import usePosition from "../../hooks/usePosition.js";
 import {
-  useTerminalDimensions,
   useTerminalCapabilities,
+  useTerminalDimensions,
 } from "../../context/TerminalInfo.js";
-import { type ImageProps } from "./protocol.js";
-import sharp from "sharp";
-import { fetchImage, calculateImageSize } from "../../utils/image.js";
+import usePosition from "../../hooks/usePosition.js";
+import { calculateImageSize, fetchImage } from "../../utils/image.js";
+import type { ImageProps } from "./protocol.js";
 
 /**
  * Sixel Image Rendering Component
@@ -67,6 +67,7 @@ function SixelImage(props: ImageProps) {
     onSupportDetected,
     width: propsWidth,
     height: propsHeight,
+    allowPartial,
   } = props;
 
   // Detect support and notify parent
@@ -98,7 +99,7 @@ function SixelImage(props: ImageProps) {
         if (!componentPosition) return;
         if (!terminalDimensions) return;
 
-        const image = await fetchImage(src);
+        const image = await fetchImage(src, allowPartial);
         if (!image) {
           setHasError(true);
           return;
@@ -147,6 +148,7 @@ function SixelImage(props: ImageProps) {
       componentPosition?.width,
       componentPosition?.height,
       terminalDimensions,
+      allowPartial,
     ],
   );
 

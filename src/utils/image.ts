@@ -3,9 +3,15 @@ import sharp from "sharp";
 
 export async function fetchImage(
   src: string,
+  allowPartial = false,
 ): Promise<sharp.Sharp | undefined> {
   try {
     let imageBuffer: Buffer;
+    // supports partially loaded image reading
+    const options: sharp.SharpOptions = {};
+    if (allowPartial) {
+      options.failOn = "none";
+    }
     if (src.startsWith("http")) {
       const response = await fetch(src);
       if (!response.ok) {
@@ -14,10 +20,10 @@ export async function fetchImage(
       imageBuffer = Buffer.from(await response.arrayBuffer());
     } else {
       // Assume local file path
-      imageBuffer = await sharp(src).toBuffer();
+      imageBuffer = await sharp(src, options).toBuffer();
     }
 
-    return sharp(imageBuffer);
+    return sharp(imageBuffer, options);
   } catch {
     // console.error('Failed to fetch image:', error);
     return undefined;

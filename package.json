@@ -1,6 +1,6 @@
 {
   "name": "ink-picture",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Better image component for Ink CLI/TUIs",
   "license": "MIT",
   "repository": "https://github.com/endernoke/ink-picture",
@@ -20,6 +20,7 @@
   "scripts": {
     "format": "prettier --write .",
     "example": "node --loader=ts-node/esm --no-warnings example/image.tsx",
+    "example:partial": "node --loader=ts-node/esm --no-warnings example/image.tsx --img=example/images/partial.jpeg --partial",
     "test": "tsc --noEmit && prettier --check . && eslint . && FORCE_COLOR=1 ava",
     "build": "tsc",
     "prepare": "husky",

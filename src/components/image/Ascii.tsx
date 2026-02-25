@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Box, Text, Newline, measureElement, type DOMElement } from "ink";
 import chalk from "chalk";
+import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
+import React, { useEffect, useRef, useState } from "react";
 import sharp from "sharp";
-import { type ImageProps } from "./protocol.js";
-import { fetchImage, calculateImageSize } from "../../utils/image.js";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
+import { calculateImageSize, fetchImage } from "../../utils/image.js";
+import { type ImageProps } from "./protocol.js";
 
 /**
  * ASCII Image Rendering Component
@@ -36,6 +36,7 @@ function AsciiImage(props: ImageProps) {
     src,
     width: propsWidth,
     height: propsHeight,
+    allowPartial,
   } = props;
 
   // Detect support and notify parent
@@ -50,7 +51,7 @@ function AsciiImage(props: ImageProps) {
 
   useEffect(() => {
     const generateImageOutput = async () => {
-      const image = await fetchImage(src);
+      const image = await fetchImage(src, allowPartial);
       if (!image) {
         setHasError(true);
         return;
@@ -85,7 +86,7 @@ function AsciiImage(props: ImageProps) {
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [src, propsWidth, propsHeight, terminalCapabilities]);
+  }, [src, propsWidth, propsHeight, terminalCapabilities, allowPartial]);
 
   return (
     <Box ref={containerRef} flexDirection="column" flexGrow={1}>

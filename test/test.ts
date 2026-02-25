@@ -1,6 +1,6 @@
+import path from "node:path";
 import process from "node:process";
 import url from "node:url";
-import path from "node:path";
 import test from "ava";
 import { spawn } from "node-pty";
 
