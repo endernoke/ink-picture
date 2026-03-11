@@ -27,7 +27,9 @@
     "lint": "biome lint"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,json,md}": ["biome format --write"]
+    "*.{ts,tsx,js,jsx,json,md}": [
+      "biome format --write --no-errors-on-unmatched"
+    ]
   },
   "files": ["build"],
   "keywords": [
