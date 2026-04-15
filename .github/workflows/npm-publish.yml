@@ -14,18 +14,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+          cache: true
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: "25.x"
           registry-url: "https://registry.npmjs.org"
           cache: "pnpm"
-      
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 10
-          cache: true
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
