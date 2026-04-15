@@ -227,9 +227,9 @@ Contributions are welcome! To contribute:
 1. Open or comment on an issue describing what you want to change
 2. Fork the repository
 3. Create a feature branch: `git checkout -b feature/amazing-feature`
-4. Install dependencies: `npm install`
+4. Install dependencies: `pnpm install`
 5. Make your changes
-6. Run tests: `npm test`
+6. Run tests: `pnpm test`
 7. Open a pull request
 
 ## License
