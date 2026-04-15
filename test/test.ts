@@ -1,8 +1,8 @@
 import path from "node:path";
 import process from "node:process";
 import url from "node:url";
-import test from "ava";
 import { spawn } from "node-pty";
+import { expect, test } from "vitest";
 
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
@@ -73,25 +73,25 @@ const term = (fixture: string, args: string[] = []) => {
   return result;
 };
 
-test("queryEscapeSequence - able to quit via Ctrl+C", async (t) => {
+test("queryEscapeSequence - able to quit via Ctrl+C", async () => {
   const ps = term("ctrlc");
   void ps.write("\x03"); // Ctrl+C
   const exitStatus = await ps.waitForExit();
-  t.is(exitStatus?.signal, 2);
-  t.false(ps.output.includes("exited"));
+  expect(exitStatus?.signal).toBe(2);
+  expect(ps.output.includes("exited")).toBe(false);
 });
 
-test("queryEscapeSequence - useInput works", async (t) => {
+test("queryEscapeSequence - useInput works", async () => {
   const ps = term("use-input", ["text"]);
   void ps.write("george");
   await ps.waitForExit();
-  t.true(ps.output.includes("exited"));
+  expect(ps.output.includes("exited")).toBe(true);
 });
 
-test("queryEscapeSequence - useInput with manual ctrl+c handling works", async (t) => {
+test("queryEscapeSequence - useInput with manual ctrl+c handling works", async () => {
   const ps = term("use-input-ctrlc");
   void ps.write("\u0003"); // Ctrl+C
   const exitStatus = await ps.waitForExit();
-  t.is(exitStatus?.signal, 0);
-  t.true(ps.output.includes("exited"));
+  expect(exitStatus?.signal).toBe(0);
+  expect(ps.output.includes("exited")).toBe(true);
 });

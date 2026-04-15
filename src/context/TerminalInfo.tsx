@@ -15,7 +15,7 @@ function supportsITerm2(context?: { supportsSixelGraphics: boolean }) {
     // See https://wezterm.org/imgcat.html
     const version = process.env.TERM_PROGRAM_VERSION;
     if (!version) return false;
-    const date = parseInt(version.split("-")[0]);
+    const date = parseInt(version.split("-")[0], 10);
     if (!Number.isNaN(date) && date >= 20220319) {
       return true;
     }
@@ -24,7 +24,7 @@ function supportsITerm2(context?: { supportsSixelGraphics: boolean }) {
     // See https://www.reddit.com/r/kde/comments/ul0irg/konsole_2204_with_sixel_support_is_out_of_beta_now/
     const version = process.env.KONSOLE_VERSION;
     if (!version) return false;
-    const date = parseInt(version);
+    const date = parseInt(version, 10);
     if (!Number.isNaN(date) && date >= 220400) {
       return true;
     }

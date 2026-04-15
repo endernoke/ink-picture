@@ -1,0 +1,3 @@
+allowBuilds:
+  node-pty: true
+  sharp: true
