@@ -10,8 +10,6 @@ function UserInput() {
       exit();
       return;
     }
-
-    throw new Error("Crash");
   });
 
   return (
