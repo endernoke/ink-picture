@@ -54,14 +54,12 @@ test.fail("renders sixel image", async () => {
     ctx.terminalProxy,
   );
   await ps.waitForExit();
-  for (let y = 0; y < 2; y++) {
-    for (let x = 0; x < 4; x++) {
-      const cellGraphic = await ctx.terminalProxy.getImageAtBufferCell(x, y);
-      expect(
-        cellGraphic,
-        `Cell (${x}, ${y}) should contain graphics`,
-      ).toBeDefined();
-    }
+  const cells = await ctx.terminalProxy.cellsContainGraphics(0, 0, 4, 2);
+  for (const cell of cells) {
+    expect(
+      cell.hasGraphic,
+      `Cell (${cell.x}, ${cell.y}) should contain graphics`,
+    ).toBe(true);
   }
 });
 
@@ -72,14 +70,12 @@ test.fail("renders iip image", async () => {
     ctx.terminalProxy,
   );
   await ps.waitForExit();
-  for (let y = 0; y < 2; y++) {
-    for (let x = 0; x < 4; x++) {
-      const cellGraphic = await ctx.terminalProxy.getImageAtBufferCell(x, y);
-      expect(
-        cellGraphic,
-        `Cell (${x}, ${y}) should contain graphics`,
-      ).toBeDefined();
-    }
+  const cells = await ctx.terminalProxy.cellsContainGraphics(0, 0, 4, 2);
+  for (const cell of cells) {
+    expect(
+      cell.hasGraphic,
+      `Cell (${cell.x}, ${cell.y}) should contain graphics`,
+    ).toBe(true);
   }
 });
 
@@ -90,13 +86,11 @@ test.fail("renders kitty image", async () => {
     ctx.terminalProxy,
   );
   await ps.waitForExit();
-  for (let y = 0; y < 2; y++) {
-    for (let x = 0; x < 4; x++) {
-      const cellGraphic = await ctx.terminalProxy.getImageAtBufferCell(x, y);
-      expect(
-        cellGraphic,
-        `Cell (${x}, ${y}) should contain graphics`,
-      ).toBeDefined();
-    }
+  const cells = await ctx.terminalProxy.cellsContainGraphics(0, 0, 4, 2);
+  for (const cell of cells) {
+    expect(
+      cell.hasGraphic,
+      `Cell (${cell.x}, ${cell.y}) should contain graphics`,
+    ).toBe(true);
   }
 });

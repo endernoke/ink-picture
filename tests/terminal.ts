@@ -150,6 +150,35 @@ class TerminalProxy {
     );
   }
 
+  public async cellsContainGraphics(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): Promise<Array<{ x: number; y: number; hasGraphic: boolean }>> {
+    return this._page.evaluate(
+      ([imageAddon, x, y, width, height]) => {
+        const results: Array<{ x: number; y: number; hasGraphic: boolean }> =
+          [];
+
+        for (let row = y as number; row < (height as number); row++) {
+          for (let col = x as number; col < (width as number); col++) {
+            results.push({
+              x: col,
+              y: row,
+              hasGraphic: Boolean(
+                (imageAddon as ImageAddon).getImageAtBufferCell(col, row),
+              ),
+            });
+          }
+        }
+
+        return results;
+      },
+      [await this.getImageAddon(), x, y, width, height],
+    );
+  }
+
   async getCols(): Promise<number> {
     return this._page.evaluate(
       ([term]) => (term as Terminal).cols,
@@ -222,6 +251,7 @@ export async function createTerminalProcess({
     ...process.env,
     NODE_NO_WARNINGS: "1",
     CI: "false",
+    TS_NODE_TRANSPILE_ONLY: "1",
   };
 
   const cols = await terminalProxy.getCols();
