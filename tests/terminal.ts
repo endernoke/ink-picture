@@ -5,6 +5,7 @@ import { Browser, JSHandle, Page } from "@playwright/test";
 import { type IImageAddonOptions, ImageAddon } from "@xterm/addon-image";
 import { Terminal } from "@xterm/xterm";
 import { spawn } from "node-pty";
+import { ReactNode } from "react";
 
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
@@ -118,7 +119,23 @@ class TerminalProxy {
     );
   }
 
-  async getImageAtBufferCell(
+  public async getBufferAsString(): Promise<string> {
+    return this._page.evaluate(
+      ([term]) => {
+        let bufferString = "";
+        for (let i = 0; i <= (term as Terminal).buffer.active.cursorY; i++) {
+          const line = (term as Terminal).buffer.active.getLine(i);
+          if (line) {
+            bufferString += `${line.translateToString()}\n`;
+          }
+        }
+        return bufferString;
+      },
+      [await this.getTerm()],
+    );
+  }
+
+  public async getImageAtBufferCell(
     x: number,
     y: number,
   ): Promise<HTMLCanvasElement | undefined> {
