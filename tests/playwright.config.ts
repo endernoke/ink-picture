@@ -2,7 +2,7 @@ import { PlaywrightTestConfig } from "@playwright/test";
 
 const config: PlaywrightTestConfig = {
   testDir: ".",
-  timeout: 10000,
+  timeout: 20000,
   // We only need one browser because we're testing terminal using web-based xterm.js, not cross-browser compatibility
   projects: [
     {

@@ -1,11 +1,12 @@
 import { Box, type DOMElement, Newline, Text, useStdout } from "ink";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   useTerminalCapabilities,
   useTerminalDimensions,
 } from "../../context/TerminalInfo.js";
 // import { backgroundContext } from "ink";
 import usePosition from "../../hooks/usePosition.js";
+import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
 import generateKittyId from "../../utils/generateKittyId.js";
 import { calculateImageSize, fetchImage } from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
@@ -56,6 +57,7 @@ function KittyImage(props: ImageProps) {
   const containerRef = useRef<DOMElement | null>(null);
   const componentPosition = usePosition(containerRef);
   const terminalDimensions = useTerminalDimensions();
+  const shouldCleanupRef = useRef<boolean>(true);
   const { src, width, height, alt, allowPartial } = props;
 
   // TODO: If we upgrade to Ink 6 we will need to deal with Box background colors when rendering/cleaning up
@@ -145,6 +147,13 @@ function KittyImage(props: ImageProps) {
    *
    * TODO: This may change when Ink implements incremental rendering
    */
+  const onExit = useCallback(() => {
+    shouldCleanupRef.current = false;
+  }, []);
+  const onSigInt = useCallback(() => {
+    shouldCleanupRef.current = false;
+    process.exit();
+  }, []);
   useEffect(() => {
     if (!imageId) return;
     if (!componentPosition) return;
@@ -171,13 +180,21 @@ function KittyImage(props: ImageProps) {
 
   // Cleanup effect to remove Kitty image on unmount or image change only
   useEffect(() => {
+    process.on("exit", onExit);
+    process.on("SIGINT", onSigInt);
+    process.on("SIGTERM", onSigInt);
+
     return () => {
+      process.removeListener("exit", onExit);
+      process.removeListener("SIGINT", onSigInt);
+      process.removeListener("SIGTERM", onSigInt);
+      if (!shouldCleanupRef.current) return;
       if (!imageId) return;
 
       // a=d: delete image; d=I: remove image data from storage; i=image-id
       stdout.write(`\x1b_Ga=d,d=I,i=${imageId}\x1b\\`);
     };
-  }, [imageId, stdout]);
+  }, [imageId, stdout, onExit, onSigInt]);
 
   return (
     <Box
@@ -206,24 +223,6 @@ function KittyImage(props: ImageProps) {
       )}
     </Box>
   );
-}
-
-/**
- * Moves cursor forward (right) by specified number of columns.
- * @param count - Number of columns to move forward (default: 1)
- * @returns ANSI escape sequence string
- */
-function cursorForward(count: number = 1) {
-  return `\x1b[${count}C`;
-}
-
-/**
- * Moves cursor up by specified number of rows.
- * @param count - Number of rows to move up (default: 1)
- * @returns ANSI escape sequence string
- */
-function cursorUp(count: number = 1) {
-  return `\x1b[${count}A`;
 }
 
 export default KittyImage;

@@ -127,6 +127,8 @@ function ProtocolDemo({ config }: { config: ProtocolConfig }) {
       <Box
         borderStyle="round"
         borderColor={supportInfo.supported ? "green" : "red"}
+        width={26}
+        height={14}
       >
         {supportInfo.supported ? (
           <Image

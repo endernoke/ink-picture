@@ -227,6 +227,13 @@ interface ExitStatus {
   signal?: number;
 }
 
+export interface TerminalProcess {
+  write: (input: string) => Promise<void>;
+  output: string;
+  waitForExit: () => Promise<ExitStatus>;
+  kill: () => Promise<ExitStatus>;
+}
+
 export async function createTerminalProcess({
   file,
   args,
@@ -235,7 +242,7 @@ export async function createTerminalProcess({
   file: string;
   args: string[];
   terminalProxy: TerminalProxy;
-}) {
+}): Promise<TerminalProcess> {
   let exitResolve: (exitStatus: ExitStatus) => void;
 
   const exitPromise = new Promise<ExitStatus>((resolve) => {
@@ -268,6 +275,10 @@ export async function createTerminalProcess({
       // Give TS and Ink time to start up and render UI
       await processReadyPromise;
       pty.write(input);
+    },
+    kill() {
+      pty.kill();
+      return exitPromise;
     },
     output: "",
     waitForExit: async () => exitPromise,
@@ -319,11 +330,7 @@ export async function runFixture(
   fixture: string,
   args: string[],
   terminalProxy: TerminalProxy,
-): Promise<{
-  write: (input: string) => Promise<void>;
-  output: string;
-  waitForExit: () => Promise<ExitStatus>;
-}> {
+): Promise<TerminalProcess> {
   const fixturePath = path.join(__dirname, "fixtures", fixture);
   return createTerminalProcess({
     file: "node",

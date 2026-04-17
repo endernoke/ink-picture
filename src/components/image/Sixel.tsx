@@ -8,6 +8,7 @@ import {
   useTerminalDimensions,
 } from "../../context/TerminalInfo.js";
 import usePosition from "../../hooks/usePosition.js";
+import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
 import { calculateImageSize, fetchImage } from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
@@ -251,24 +252,6 @@ async function toSixel(imageData: { data: Buffer; info: sharp.OutputInfo }) {
 
   const sixelData = image2sixel(u8Data, width, height);
   return sixelData;
-}
-
-/**
- * Moves cursor forward (right) by specified number of columns.
- * @param count - Number of columns to move forward (default: 1)
- * @returns ANSI escape sequence string
- */
-function cursorForward(count: number = 1) {
-  return `\x1b[${count}C`;
-}
-
-/**
- * Moves cursor up by specified number of rows.
- * @param count - Number of rows to move up (default: 1)
- * @returns ANSI escape sequence string
- */
-function cursorUp(count: number = 1) {
-  return `\x1b[${count}A`;
 }
 
 export default SixelImage;
