@@ -55,28 +55,8 @@ function ITerm2Image(props: ImageProps) {
   const containerRef = useRef<DOMElement | null>(null);
   const componentPosition = usePosition(containerRef);
   const terminalDimensions = useTerminalDimensions();
-  const terminalCapabilities = useTerminalCapabilities();
-  const [actualSizeInCells, setActualSizeInCells] = useState<{
-    width: number;
-    height: number;
-  } | null>(null);
   const shouldCleanupRef = useRef<boolean>(true);
-  const {
-    onSupportDetected,
-    src,
-    width: propsWidth,
-    height: propsHeight,
-    allowPartial,
-  } = props;
-
-  // Detect support and notify parent
-  useEffect(() => {
-    if (!terminalCapabilities) return;
-
-    // ITerm2 rendering requires explicit iTerm2 graphics support
-    const isSupported = terminalCapabilities.supportsITerm2Graphics;
-    onSupportDetected?.(isSupported);
-  }, [terminalCapabilities, onSupportDetected]);
+  const { src, width, height, alt, allowPartial } = props;
 
   // TODO: If we upgrade to Ink 6 we will need to deal with Box background colors when rendering/cleaning up
   // const inheritedBackgroundColor = useContext(backgroundContext);
@@ -94,7 +74,6 @@ function ITerm2Image(props: ImageProps) {
    */
   useEffect(() => {
     const generateImageOutput = async () => {
-      if (!componentPosition) return;
       if (!terminalDimensions) return;
 
       const image = await fetchImage(src, allowPartial);
@@ -104,43 +83,18 @@ function ITerm2Image(props: ImageProps) {
       }
       setHasError(false);
 
-      const metadata = await image.metadata();
-
-      const { width: maxWidth, height: maxHeight } = componentPosition;
-      const { width, height } = calculateImageSize({
-        maxWidth: maxWidth * terminalDimensions.cellWidth,
-        maxHeight: maxHeight * terminalDimensions.cellHeight,
-        originalAspectRatio: metadata.width / metadata.height,
-        specifiedWidth: propsWidth
-          ? propsWidth * terminalDimensions.cellWidth
-          : undefined,
-        specifiedHeight: propsHeight
-          ? propsHeight * terminalDimensions.cellHeight
-          : undefined,
-      });
-
       const resizedImage = await image
         .png() // iTerm2 expects a FILE, not raw pixel data
         .toBuffer({ resolveWithObject: true });
-      setActualSizeInCells({
-        width: Math.ceil(width / terminalDimensions.cellWidth),
-        height: Math.ceil(height / terminalDimensions.cellHeight),
-      });
 
-      const output = toITerm2(resizedImage, { width, height });
+      const output = toITerm2(resizedImage, {
+        width: width * terminalDimensions.cellWidth,
+        height: height * terminalDimensions.cellHeight,
+      });
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [
-    src,
-    propsWidth,
-    propsHeight,
-    componentPosition,
-    componentPosition?.width,
-    componentPosition?.height,
-    terminalDimensions,
-    allowPartial,
-  ]);
+  }, [src, width, height, terminalDimensions, allowPartial]);
 
   /**
    * Critical rendering effect for ITerm2 image display.
@@ -207,8 +161,8 @@ function ITerm2Image(props: ImageProps) {
       previousRenderBoundingBox = {
         row: stdout.rows - componentPosition.appHeight + componentPosition.row,
         col: componentPosition.col,
-        width: actualSizeInCells!.width,
-        height: actualSizeInCells!.height,
+        width: width * terminalDimensions!.cellWidth,
+        height: height * terminalDimensions!.cellHeight,
       };
     }, 100); // Delay to allow Ink/terminal to finish its render
 
@@ -245,20 +199,28 @@ function ITerm2Image(props: ImageProps) {
   });
 
   return (
-    <Box ref={containerRef} flexDirection="column" flexGrow={1}>
+    <Box
+      ref={containerRef}
+      flexDirection="column"
+      width={width}
+      height={height}
+    >
       {imageOutput ? (
         <Text color="gray" wrap="wrap">
-          {props.alt || "Loading..."}
+          {alt ?? "Loading..."}
         </Text>
       ) : (
         <Box flexDirection="column" alignItems="center" justifyContent="center">
-          {hasError && (
+          {alt ? (
+            <Text color="gray">{alt}</Text>
+          ) : hasError ? (
             <Text color="red">
               X<Newline />
               Load failed
             </Text>
+          ) : (
+            <Text color="gray">"Loading..."</Text>
           )}
-          <Text color="gray">{props.alt || "Loading..."}</Text>
         </Box>
       )}
     </Box>

@@ -56,23 +56,7 @@ function KittyImage(props: ImageProps) {
   const containerRef = useRef<DOMElement | null>(null);
   const componentPosition = usePosition(containerRef);
   const terminalDimensions = useTerminalDimensions();
-  const terminalCapabilities = useTerminalCapabilities();
-  const {
-    src,
-    onSupportDetected,
-    width: propsWidth,
-    height: propsHeight,
-    allowPartial,
-  } = props;
-
-  // Detect support and notify parent
-  useEffect(() => {
-    if (!terminalCapabilities) return;
-
-    // Kitty rendering requires explicit kitty graphics support
-    const isSupported = terminalCapabilities.supportsKittyGraphics;
-    onSupportDetected?.(isSupported);
-  }, [terminalCapabilities, onSupportDetected]);
+  const { src, width, height, alt, allowPartial } = props;
 
   // TODO: If we upgrade to Ink 6 we will need to deal with Box background colors when rendering/cleaning up
   // const inheritedBackgroundColor = useContext(backgroundContext);
@@ -88,7 +72,6 @@ function KittyImage(props: ImageProps) {
    */
   useEffect(() => {
     const generateImageOutput = async () => {
-      if (!componentPosition) return;
       if (!terminalDimensions) return;
 
       const image = await fetchImage(src, allowPartial);
@@ -98,22 +81,13 @@ function KittyImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const metadata = await image.metadata();
-
-      const { width: maxWidth, height: maxHeight } = componentPosition;
-      const { width, height } = calculateImageSize({
-        maxWidth: maxWidth * terminalDimensions.cellWidth,
-        maxHeight: maxHeight * terminalDimensions.cellHeight,
-        originalAspectRatio: metadata.width / metadata.height,
-        specifiedWidth: propsWidth
-          ? propsWidth * terminalDimensions.cellWidth
-          : undefined,
-        specifiedHeight: propsHeight
-          ? propsHeight * terminalDimensions.cellHeight
-          : undefined,
-      });
-
-      const resizedImage = image.resize(width, height);
+      const resizedImage = image.resize(
+        width * terminalDimensions.cellWidth,
+        height * terminalDimensions.cellHeight,
+        {
+          fit: "fill",
+        },
+      );
 
       try {
         const imageId = generateKittyId();
@@ -148,17 +122,7 @@ function KittyImage(props: ImageProps) {
       }
     };
     generateImageOutput();
-  }, [
-    src,
-    propsWidth,
-    propsHeight,
-    componentPosition,
-    componentPosition?.width,
-    componentPosition?.height,
-    terminalDimensions,
-    allowPartial,
-    stdout.write,
-  ]);
+  }, [src, width, height, terminalDimensions, allowPartial, stdout.write]);
 
   /**
    * Critical rendering effect for Kitty image display.
@@ -216,20 +180,28 @@ function KittyImage(props: ImageProps) {
   }, [imageId, stdout]);
 
   return (
-    <Box ref={containerRef} flexDirection="column" flexGrow={1}>
+    <Box
+      ref={containerRef}
+      flexDirection="column"
+      width={width}
+      height={height}
+    >
       {imageId ? (
         <Text color="gray" wrap="wrap">
-          {props.alt || "Loading..."}
+          {alt ?? "Loading..."}
         </Text>
       ) : (
         <Box flexDirection="column" alignItems="center" justifyContent="center">
-          {hasError && (
+          {alt ? (
+            <Text color="gray">{alt}</Text>
+          ) : hasError ? (
             <Text color="red">
               X<Newline />
               Load failed
             </Text>
+          ) : (
+            <Text color="gray">{props.alt || "Loading..."}</Text>
           )}
-          <Text color="gray">{props.alt || "Loading..."}</Text>
         </Box>
       )}
     </Box>

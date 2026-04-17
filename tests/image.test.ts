@@ -25,7 +25,7 @@ test.beforeEach(async () => {
   `);
 });
 
-test.fail("renders standalone image", async () => {
+test("renders standalone image", async () => {
   const ps = await runFixture(
     "simple-image.tsx",
     ["../example/images/full.png"],
@@ -39,7 +39,7 @@ test.fail("renders standalone image", async () => {
 test("shows fallback on load failure", async () => {
   const ps = await runFixture(
     "simple-image.tsx",
-    ["non-existent.png", "10", "5"],
+    ["non-existent.png", "12", "6"],
     ctx.terminalProxy,
   );
   await ps.waitForExit();

@@ -127,12 +127,12 @@ function ProtocolDemo({ config }: { config: ProtocolConfig }) {
       <Box
         borderStyle="round"
         borderColor={supportInfo.supported ? "green" : "red"}
-        width={28}
-        height={14}
       >
         {supportInfo.supported ? (
           <Image
             src={getImagePath()}
+            width={24}
+            height={12}
             protocol={config.protocol}
             alt={`${config.name} demo`}
             allowPartial={getAllowPartial()}

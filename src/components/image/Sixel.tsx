@@ -56,28 +56,8 @@ function SixelImage(props: ImageProps) {
   const containerRef = useRef<DOMElement | null>(null);
   const componentPosition = usePosition(containerRef);
   const terminalDimensions = useTerminalDimensions();
-  const terminalCapabilities = useTerminalCapabilities();
-  const [actualSizeInCells, setActualSizeInCells] = useState<{
-    width: number;
-    height: number;
-  } | null>(null);
   const shouldCleanupRef = useRef<boolean>(true);
-  const {
-    src,
-    onSupportDetected,
-    width: propsWidth,
-    height: propsHeight,
-    allowPartial,
-  } = props;
-
-  // Detect support and notify parent
-  useEffect(() => {
-    if (!terminalCapabilities) return;
-
-    // Sixel rendering requires explicit sixel graphics support
-    const isSupported = terminalCapabilities.supportsSixelGraphics;
-    onSupportDetected?.(isSupported);
-  }, [terminalCapabilities, onSupportDetected]);
+  const { src, width, height, alt, allowPartial } = props;
 
   // TODO: If we upgrade to Ink 6 we will need to deal with Box background colors when rendering/cleaning up
   // const inheritedBackgroundColor = useContext(backgroundContext);
@@ -95,7 +75,6 @@ function SixelImage(props: ImageProps) {
    */
   useEffect(() => {
     const generateImageOutput = async () => {
-      if (!componentPosition) return;
       if (!terminalDimensions) return;
 
       const image = await fetchImage(src, allowPartial);
@@ -105,49 +84,23 @@ function SixelImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const metadata = await image.metadata();
-
-      const { width: maxWidth, height: maxHeight } = componentPosition;
-      const { width, height } = calculateImageSize({
-        maxWidth: maxWidth * terminalDimensions.cellWidth,
-        maxHeight: maxHeight * terminalDimensions.cellHeight,
-        originalAspectRatio: metadata.width / metadata.height,
-        specifiedWidth: propsWidth
-          ? propsWidth * terminalDimensions.cellWidth
-          : undefined,
-        specifiedHeight: propsHeight
-          ? propsHeight * terminalDimensions.cellHeight
-          : undefined,
-      });
-
       const resizedImage = await image
-        .resize(width, height)
+        .resize(
+          width * terminalDimensions.cellWidth,
+          height * terminalDimensions.cellHeight,
+          {
+            fit: "fill",
+          },
+        )
         .ensureAlpha() // node-sixel requires alpha channel to be present
         .raw()
         .toBuffer({ resolveWithObject: true });
-      setActualSizeInCells({
-        width: Math.ceil(
-          resizedImage.info.width / terminalDimensions.cellWidth,
-        ),
-        height: Math.ceil(
-          resizedImage.info.height / terminalDimensions.cellHeight,
-        ),
-      });
 
       const output = await toSixel(resizedImage);
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [
-    src,
-    propsWidth,
-    propsHeight,
-    componentPosition,
-    componentPosition?.width,
-    componentPosition?.height,
-    terminalDimensions,
-    allowPartial,
-  ]);
+  }, [src, width, height, terminalDimensions, allowPartial]);
 
   /**
    * Critical rendering effect for Sixel image display.
@@ -214,8 +167,8 @@ function SixelImage(props: ImageProps) {
       previousRenderBoundingBox = {
         row: stdout.rows - componentPosition.appHeight + componentPosition.row,
         col: componentPosition.col,
-        width: actualSizeInCells!.width,
-        height: actualSizeInCells!.height,
+        width: width,
+        height: height,
       };
     }, 100); // Delay to allow Ink/terminal to finish its render
 
@@ -252,20 +205,28 @@ function SixelImage(props: ImageProps) {
   });
 
   return (
-    <Box ref={containerRef} flexDirection="column" flexGrow={1}>
+    <Box
+      ref={containerRef}
+      flexDirection="column"
+      width={width}
+      height={height}
+    >
       {imageOutput ? (
         <Text color="gray" wrap="wrap">
-          {props.alt || "Loading..."}
+          {alt ?? "Loading..."}
         </Text>
       ) : (
         <Box flexDirection="column" alignItems="center" justifyContent="center">
-          {hasError && (
+          {alt ? (
+            <Text color="gray">{alt}</Text>
+          ) : hasError ? (
             <Text color="red">
               X<Newline />
               Load failed
             </Text>
+          ) : (
+            <Text color="gray">Loading...</Text>
           )}
-          <Text color="gray">{props.alt || "Loading..."}</Text>
         </Box>
       )}
     </Box>

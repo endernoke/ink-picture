@@ -40,23 +40,7 @@ function BrailleImage(props: ImageProps) {
   const [imageOutput, setImageOutput] = useState<string | null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
   const containerRef = useRef<DOMElement | null>(null);
-  const terminalCapabilities = useTerminalCapabilities();
-  const {
-    onSupportDetected,
-    src,
-    width: propsWidth,
-    height: propsHeight,
-    allowPartial,
-  } = props;
-
-  // Detect support and notify parent
-  useEffect(() => {
-    if (!terminalCapabilities) return;
-
-    // Braille rendering requires Unicode support for braille characters
-    const isSupported = terminalCapabilities.supportsUnicode;
-    onSupportDetected?.(isSupported);
-  }, [terminalCapabilities, onSupportDetected]);
+  const { src, width, height, alt, allowPartial } = props;
 
   useEffect(() => {
     const generateImageOutput = async () => {
@@ -67,22 +51,10 @@ function BrailleImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const metadata = await image.metadata();
-
-      if (!containerRef.current) return;
-      const { width: maxWidth, height: maxHeight } = measureElement(
-        containerRef.current,
-      );
-      const { width, height } = calculateImageSize({
-        maxWidth: maxWidth * 2,
-        maxHeight: maxHeight * 4,
-        originalAspectRatio: metadata.width / metadata.height,
-        specifiedWidth: propsWidth ? propsWidth * 2 : undefined,
-        specifiedHeight: propsHeight ? propsHeight * 4 : undefined,
-      });
-
       const resizedImage = await image
-        .resize(width, height)
+        .resize(width * 2, height * 4, {
+          fit: "fill",
+        })
         .raw()
         .toBuffer({ resolveWithObject: true });
 
@@ -90,21 +62,32 @@ function BrailleImage(props: ImageProps) {
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [src, propsWidth, propsHeight, allowPartial]);
+  }, [src, width, height, allowPartial]);
 
   return (
-    <Box ref={containerRef} flexDirection="column" flexGrow={1}>
+    <Box
+      ref={containerRef}
+      flexDirection="column"
+      width={width}
+      height={height}
+    >
       {imageOutput ? (
-        imageOutput.split("\n").map((line) => <Text key={line}>{line}</Text>)
+        imageOutput
+          .split("\n")
+          // biome-ignore lint/suspicious/noArrayIndexKey: static content, won't change
+          .map((line, idx) => <Text key={`${line}-${idx}`}>{line}</Text>)
       ) : (
         <Box flexDirection="column" alignItems="center" justifyContent="center">
-          {hasError && (
+          {alt ? (
+            <Text color="gray">{alt}</Text>
+          ) : hasError ? (
             <Text color="red">
               X<Newline />
               Load failed
             </Text>
+          ) : (
+            <Text color="gray">Loading...</Text>
           )}
-          <Text color="gray">{props.alt || "Loading..."}</Text>
         </Box>
       )}
     </Box>
