@@ -4,6 +4,7 @@
     "lib": ["es2022"],
     "module": "es2022",
     "moduleResolution": "bundler",
+    "types": ["node"],
     "jsx": "react",
     "declaration": true,
     "declarationMap": true,

@@ -46,11 +46,11 @@ importers:
         specifier: ^19.1.12
         version: 19.2.14
       '@xterm/addon-image':
-        specifier: ^0.9.0
-        version: 0.9.0
+        specifier: 0.10.0-beta.197
+        version: 0.10.0-beta.197(@xterm/xterm@6.1.0-beta.197)
       '@xterm/xterm':
-        specifier: ^6.0.0
-        version: 6.0.0
+        specifier: 6.1.0-beta.197
+        version: 6.1.0-beta.197
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -336,11 +336,13 @@ packages:
     resolution: {integrity: sha512-9k/gHF6n/pAi/9tqr3m3aqkuiNosYTurLLUtc7xQ9sxB/wm7WPygCv8GYa6mS0fLJEHhqMC1ATYhz++U/lRHqg==}
     engines: {node: '>=10.0.0'}
 
-  '@xterm/addon-image@0.9.0':
-    resolution: {integrity: sha512-oYWA8/QAr5/Emwl1xL7WCoOqeG3IZfpzEz/OVq1j4Oi9934TQmHiyubClikRf0D/jL3JNiNuz/Lsqx0kXQ02BA==}
+  '@xterm/addon-image@0.10.0-beta.197':
+    resolution: {integrity: sha512-31oIqBm+Yk3xyYGjBhhp308gDyFywv3JJAWBflycgqZFbvfZ2ju4IvHmvKJhp8qC+0ac6SRAA7XBKGqtoZjcsA==}
+    peerDependencies:
+      '@xterm/xterm': ^6.1.0-beta.197
 
-  '@xterm/xterm@6.0.0':
-    resolution: {integrity: sha512-TQwDdQGtwwDt+2cgKDLn0IRaSxYu1tSUjgKarSDkUM0ZNiSRXFpjxEsvc/Zgc5kq5omJ+V0a8/kIM2WD3sMOYg==}
+  '@xterm/xterm@6.1.0-beta.197':
+    resolution: {integrity: sha512-vzoc8sBcsvFpziSgeVGKZQDT1T/9MmEUKfUDpVqc3slDv7o0SiQCjvPeOF8y1++5vx2xmUn8lfcLnbfdtigtSQ==}
 
   acorn-walk@8.3.5:
     resolution: {integrity: sha512-HEHNfbars9v4pgpW6SO1KSPkfoS0xVOM/9UzkJltjlsHZmJasxg8aXkuZa7SMf8vKGIBhpUsPluQSqhJFCqebw==}
@@ -1059,9 +1061,11 @@ snapshots:
 
   '@xmldom/xmldom@0.8.12': {}
 
-  '@xterm/addon-image@0.9.0': {}
+  '@xterm/addon-image@0.10.0-beta.197(@xterm/xterm@6.1.0-beta.197)':
+    dependencies:
+      '@xterm/xterm': 6.1.0-beta.197
 
-  '@xterm/xterm@6.0.0': {}
+  '@xterm/xterm@6.1.0-beta.197': {}
 
   acorn-walk@8.3.5:
     dependencies:

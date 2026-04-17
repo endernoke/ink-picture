@@ -1,11 +1,12 @@
 import { Box, type DOMElement, Newline, Text, useStdout } from "ink";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   useTerminalCapabilities,
   useTerminalDimensions,
 } from "../../context/TerminalInfo.js";
 // import { backgroundContext } from "ink";
 import usePosition from "../../hooks/usePosition.js";
+import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
 import generateKittyId from "../../utils/generateKittyId.js";
 import { calculateImageSize, fetchImage } from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
@@ -56,23 +57,8 @@ function KittyImage(props: ImageProps) {
   const containerRef = useRef<DOMElement | null>(null);
   const componentPosition = usePosition(containerRef);
   const terminalDimensions = useTerminalDimensions();
-  const terminalCapabilities = useTerminalCapabilities();
-  const {
-    src,
-    onSupportDetected,
-    width: propsWidth,
-    height: propsHeight,
-    allowPartial,
-  } = props;
-
-  // Detect support and notify parent
-  useEffect(() => {
-    if (!terminalCapabilities) return;
-
-    // Kitty rendering requires explicit kitty graphics support
-    const isSupported = terminalCapabilities.supportsKittyGraphics;
-    onSupportDetected?.(isSupported);
-  }, [terminalCapabilities, onSupportDetected]);
+  const shouldCleanupRef = useRef<boolean>(true);
+  const { src, width, height, alt, allowPartial } = props;
 
   // TODO: If we upgrade to Ink 6 we will need to deal with Box background colors when rendering/cleaning up
   // const inheritedBackgroundColor = useContext(backgroundContext);
@@ -88,7 +74,6 @@ function KittyImage(props: ImageProps) {
    */
   useEffect(() => {
     const generateImageOutput = async () => {
-      if (!componentPosition) return;
       if (!terminalDimensions) return;
 
       const image = await fetchImage(src, allowPartial);
@@ -98,22 +83,13 @@ function KittyImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const metadata = await image.metadata();
-
-      const { width: maxWidth, height: maxHeight } = componentPosition;
-      const { width, height } = calculateImageSize({
-        maxWidth: maxWidth * terminalDimensions.cellWidth,
-        maxHeight: maxHeight * terminalDimensions.cellHeight,
-        originalAspectRatio: metadata.width / metadata.height,
-        specifiedWidth: propsWidth
-          ? propsWidth * terminalDimensions.cellWidth
-          : undefined,
-        specifiedHeight: propsHeight
-          ? propsHeight * terminalDimensions.cellHeight
-          : undefined,
-      });
-
-      const resizedImage = image.resize(width, height);
+      const resizedImage = image.resize(
+        width * terminalDimensions.cellWidth,
+        height * terminalDimensions.cellHeight,
+        {
+          fit: "fill",
+        },
+      );
 
       try {
         const imageId = generateKittyId();
@@ -148,17 +124,7 @@ function KittyImage(props: ImageProps) {
       }
     };
     generateImageOutput();
-  }, [
-    src,
-    propsWidth,
-    propsHeight,
-    componentPosition,
-    componentPosition?.width,
-    componentPosition?.height,
-    terminalDimensions,
-    allowPartial,
-    stdout.write,
-  ]);
+  }, [src, width, height, terminalDimensions, allowPartial, stdout.write]);
 
   /**
    * Critical rendering effect for Kitty image display.
@@ -181,6 +147,13 @@ function KittyImage(props: ImageProps) {
    *
    * TODO: This may change when Ink implements incremental rendering
    */
+  const onExit = useCallback(() => {
+    shouldCleanupRef.current = false;
+  }, []);
+  const onSigInt = useCallback(() => {
+    shouldCleanupRef.current = false;
+    process.exit();
+  }, []);
   useEffect(() => {
     if (!imageId) return;
     if (!componentPosition) return;
@@ -207,51 +180,49 @@ function KittyImage(props: ImageProps) {
 
   // Cleanup effect to remove Kitty image on unmount or image change only
   useEffect(() => {
+    process.on("exit", onExit);
+    process.on("SIGINT", onSigInt);
+    process.on("SIGTERM", onSigInt);
+
     return () => {
+      process.removeListener("exit", onExit);
+      process.removeListener("SIGINT", onSigInt);
+      process.removeListener("SIGTERM", onSigInt);
+      if (!shouldCleanupRef.current) return;
       if (!imageId) return;
 
       // a=d: delete image; d=I: remove image data from storage; i=image-id
       stdout.write(`\x1b_Ga=d,d=I,i=${imageId}\x1b\\`);
     };
-  }, [imageId, stdout]);
+  }, [imageId, stdout, onExit, onSigInt]);
 
   return (
-    <Box ref={containerRef} flexDirection="column" flexGrow={1}>
+    <Box
+      ref={containerRef}
+      flexDirection="column"
+      width={width}
+      height={height}
+    >
       {imageId ? (
         <Text color="gray" wrap="wrap">
-          {props.alt || "Loading..."}
+          {alt ?? "Loading..."}
         </Text>
       ) : (
         <Box flexDirection="column" alignItems="center" justifyContent="center">
-          {hasError && (
+          {alt ? (
+            <Text color="gray">{alt}</Text>
+          ) : hasError ? (
             <Text color="red">
               X<Newline />
               Load failed
             </Text>
+          ) : (
+            <Text color="gray">{props.alt || "Loading..."}</Text>
           )}
-          <Text color="gray">{props.alt || "Loading..."}</Text>
         </Box>
       )}
     </Box>
   );
-}
-
-/**
- * Moves cursor forward (right) by specified number of columns.
- * @param count - Number of columns to move forward (default: 1)
- * @returns ANSI escape sequence string
- */
-function cursorForward(count: number = 1) {
-  return `\x1b[${count}C`;
-}
-
-/**
- * Moves cursor up by specified number of rows.
- * @param count - Number of rows to move up (default: 1)
- * @returns ANSI escape sequence string
- */
-function cursorUp(count: number = 1) {
-  return `\x1b[${count}A`;
 }
 
 export default KittyImage;

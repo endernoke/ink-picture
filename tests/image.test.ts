@@ -1,34 +1,31 @@
-import { expect, test } from "@playwright/test";
-import {
-  createTestContext,
-  imageAddonSettings,
-  runFixture,
-  TestContext,
-} from "./terminal";
+import { test as base, expect } from "@playwright/test";
+import { createTestContext, runFixture, TestContext } from "./terminal";
 
-let ctx: TestContext;
+function timeout(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-test.beforeAll(async ({ browser }) => {
-  ctx = await createTestContext(browser);
+type ImageTestFixtures = {
+  ctx: TestContext;
+};
+
+const test = base.extend<ImageTestFixtures>({
+  ctx: async ({ browser }, use: (context: TestContext) => Promise<void>) => {
+    const context = await createTestContext(browser);
+    await use(context);
+    await context.page.close();
+  },
 });
 
-test.afterAll(async () => {
-  await ctx.page.close();
+test.describe.configure({
+  mode: "parallel",
+  retries: 2,
 });
 
-test.beforeEach(async () => {
-  await ctx.page.evaluate(`
-    window.term.reset()
-    window.imageAddon?.dispose();
-    window.imageAddon = new window.ImageAddon.ImageAddon(${JSON.stringify(imageAddonSettings)});
-    window.term.loadAddon(window.imageAddon);
-  `);
-});
-
-test.fail("renders standalone image", async () => {
+test("renders standalone image", async ({ ctx }) => {
   const ps = await runFixture(
     "simple-image.tsx",
-    ["../example/images/full.png"],
+    ["--src", "../example/images/full.png"],
     ctx.terminalProxy,
   );
   await ps.waitForExit();
@@ -36,10 +33,10 @@ test.fail("renders standalone image", async () => {
   expect(bufferOutput).toMatch(/\u2584\u2584\s*\n\u2584\u2584/);
 });
 
-test("shows fallback on load failure", async () => {
+test("shows fallback on load failure", async ({ ctx }) => {
   const ps = await runFixture(
     "simple-image.tsx",
-    ["non-existent.png", "10", "5"],
+    ["--src", "non-existent.png", "--width", "12", "--height", "6"],
     ctx.terminalProxy,
   );
   await ps.waitForExit();
@@ -47,10 +44,105 @@ test("shows fallback on load failure", async () => {
   expect(bufferOutput).toContain("Load failed");
 });
 
-test.fail("renders sixel image", async () => {
+function checkCellsHaveGraphics(
+  cells: { x: number; y: number; hasGraphic: boolean }[],
+): boolean {
+  for (const cell of cells) {
+    if (!cell.hasGraphic) {
+      return false;
+    }
+  }
+  return true;
+}
+
+test("renders sixel image", async ({ ctx }) => {
   const ps = await runFixture(
     "simple-image.tsx",
-    ["../example/images/full.png", "4", "2", "sixel"],
+    [
+      "--src",
+      "../example/images/full.png",
+      "--protocol",
+      "sixel",
+      "--keepalive",
+    ],
+    ctx.terminalProxy,
+  );
+  await timeout(10000);
+  expect
+    .poll(
+      async () => {
+        const cells = await ctx.terminalProxy.cellsContainGraphics(0, 0, 4, 2);
+        return checkCellsHaveGraphics(cells);
+      },
+      {
+        intervals: [1000],
+        timeout: 10000,
+      },
+    )
+    .toBe(true);
+  await ps.kill();
+});
+
+test("renders iip image", async ({ ctx }) => {
+  const ps = await runFixture(
+    "simple-image.tsx",
+    [
+      "--src",
+      "../example/images/full.png",
+      "--protocol",
+      "iterm2",
+      "--keepalive",
+    ],
+    ctx.terminalProxy,
+  );
+  await timeout(4000);
+  expect
+    .poll(
+      async () => {
+        const cells = await ctx.terminalProxy.cellsContainGraphics(0, 0, 4, 2);
+        return checkCellsHaveGraphics(cells);
+      },
+      {
+        intervals: [1000],
+        timeout: 10000,
+      },
+    )
+    .toBe(true);
+  await ps.kill();
+});
+
+test("renders kitty image", async ({ ctx }) => {
+  const ps = await runFixture(
+    "simple-image.tsx",
+    [
+      "--src",
+      "../example/images/full.png",
+      "--protocol",
+      "kitty",
+      "--keepalive",
+    ],
+    ctx.terminalProxy,
+  );
+  await timeout(4000);
+  expect
+    .poll(
+      async () => {
+        const cells = await ctx.terminalProxy.cellsContainGraphics(0, 0, 4, 2);
+        return checkCellsHaveGraphics(cells);
+      },
+      {
+        intervals: [1000],
+        timeout: 10000,
+      },
+    )
+    .toBe(true);
+  await ps.kill();
+});
+
+test("keeps sixel image after exit", async ({ ctx }) => {
+  const ps = await runFixture(
+    "simple-image.tsx",
+    ["--src", "../example/images/full.png", "--protocol", "sixel"],
     ctx.terminalProxy,
   );
   await ps.waitForExit();
@@ -63,10 +155,10 @@ test.fail("renders sixel image", async () => {
   }
 });
 
-test.fail("renders iip image", async () => {
+test("keeps iip image after exit", async ({ ctx }) => {
   const ps = await runFixture(
     "simple-image.tsx",
-    ["../example/images/full.png", "4", "2", "iterm2"],
+    ["--src", "../example/images/full.png", "--protocol", "iterm2"],
     ctx.terminalProxy,
   );
   await ps.waitForExit();
@@ -79,10 +171,10 @@ test.fail("renders iip image", async () => {
   }
 });
 
-test.fail("renders kitty image", async () => {
+test("keeps kitty image after exit", async ({ ctx }) => {
   const ps = await runFixture(
     "simple-image.tsx",
-    ["../example/images/full.png", "4", "2", "kitty"],
+    ["--src", "../example/images/full.png", "--protocol", "kitty"],
     ctx.terminalProxy,
   );
   await ps.waitForExit();

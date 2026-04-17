@@ -3,7 +3,7 @@ import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
 import React, { useEffect, useRef, useState } from "react";
 import type sharp from "sharp";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
-import { calculateImageSize, fetchImage } from "../../utils/image.js";
+import { fetchImage } from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
 /**
@@ -31,23 +31,7 @@ function AsciiImage(props: ImageProps) {
   const [hasError, setHasError] = useState<boolean>(false);
   const containerRef = useRef<DOMElement | null>(null);
   const terminalCapabilities = useTerminalCapabilities();
-  const {
-    onSupportDetected,
-    src,
-    width: propsWidth,
-    height: propsHeight,
-    allowPartial,
-  } = props;
-
-  // Detect support and notify parent
-  useEffect(() => {
-    if (!terminalCapabilities) return;
-
-    // ASCII rendering works in all terminals, but colored ASCII requires color support
-    // Inclusion of color support is dynamically handled by conversion logic
-    const isSupported = true; // ASCII always works as fallback
-    onSupportDetected(isSupported);
-  }, [onSupportDetected, terminalCapabilities]);
+  const { src, width, height, alt, allowPartial } = props;
 
   useEffect(() => {
     const generateImageOutput = async () => {
@@ -57,22 +41,6 @@ function AsciiImage(props: ImageProps) {
         return;
       }
       setHasError(false);
-
-      const metadata = await image.metadata();
-
-      if (!containerRef.current) return;
-      const { width: maxWidth, height: maxHeight } = measureElement(
-        containerRef.current,
-      );
-
-      // Calculate target size - ASCII art is character-based, so we don't need to scale original sizes
-      const { width, height } = calculateImageSize({
-        maxWidth,
-        maxHeight,
-        originalAspectRatio: metadata.width! / (metadata.height! / 2),
-        specifiedWidth: propsWidth,
-        specifiedHeight: propsHeight ? propsHeight / 2 : undefined,
-      });
 
       const resizedImage = await image
         .resize(width, height, { fit: "fill" })
@@ -86,21 +54,32 @@ function AsciiImage(props: ImageProps) {
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [src, propsWidth, propsHeight, terminalCapabilities, allowPartial]);
+  }, [src, width, height, terminalCapabilities, allowPartial]);
 
   return (
-    <Box ref={containerRef} flexDirection="column" flexGrow={1}>
+    <Box
+      ref={containerRef}
+      flexDirection="column"
+      width={width}
+      height={height}
+    >
       {imageOutput ? (
-        imageOutput.split("\n").map((line) => <Text key={line}>{line}</Text>)
+        imageOutput
+          .split("\n")
+          // biome-ignore lint/suspicious/noArrayIndexKey: static content, won't change
+          .map((line, idx) => <Text key={`${line}-${idx}`}>{line}</Text>)
       ) : (
         <Box flexDirection="column" alignItems="center" justifyContent="center">
-          {hasError && (
+          {alt ? (
+            <Text color="gray">{alt}</Text>
+          ) : hasError ? (
             <Text color="red">
               X<Newline />
               Load failed
             </Text>
+          ) : (
+            <Text color="gray">Loading...</Text>
           )}
-          <Text color="gray">{props.alt || "Loading..."}</Text>
         </Box>
       )}
     </Box>

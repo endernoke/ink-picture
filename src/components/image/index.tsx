@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
+import useProtocol from "../../hooks/useProtocol.js";
 import { getBestProtocol } from "../../utils/getBestProtocol.js";
 import AsciiImage from "./Ascii.js";
 import BrailleImage from "./Braille.js";
@@ -27,8 +28,7 @@ export type ImageProtocolName = keyof typeof imageProtocols;
  * @returns JSX element rendering the image with the specified protocol
  */
 const ImageRenderer = (props: ImageProps & { protocol: ImageProtocolName }) => {
-  const ProtocolComponent =
-    imageProtocols[props.protocol] || imageProtocols.ascii;
+  const ProtocolComponent = imageProtocols[props.protocol];
   return <ProtocolComponent {...props} />;
 };
 
@@ -92,86 +92,12 @@ const ImageRenderer = (props: ImageProps & { protocol: ImageProtocolName }) => {
  * @throws Error if not used within TerminalInfoProvider context
  */
 function Image({
-  protocol: specifiedProtocol = "auto",
+  protocol: specifiedProtocol,
   ...props
-}: Omit<
-  ImageProps & { protocol?: ImageProtocolName | "auto" },
-  "onSupportDetected"
->) {
-  const terminalCapabilitiesContext = useTerminalCapabilities();
-  const [protocol, setProtocol] = useState(
-    terminalCapabilitiesContext
-      ? getBestProtocol(terminalCapabilitiesContext)
-      : ("auto" as ImageProtocolName),
-  );
+}: Omit<ImageProps & { protocol?: ImageProtocolName }, "onSupportDetected">) {
+  const protocol = useProtocol(specifiedProtocol);
 
-  /**
-   * Determines the next fallback protocol based on the current protocol and attempt count.
-   *
-   * Fallback hierarchy: kitty -> iterm2 -> sixel -> halfBlock -> braille -> ascii
-   *
-   * @param currentProtocol - The currently attempted protocol
-   * @returns The next protocol to try
-   */
-  const getFallbackProtocol = useCallback(
-    (currentProtocol: ImageProtocolName): ImageProtocolName => {
-      switch (currentProtocol) {
-        case "kitty":
-          return "iterm2";
-        case "iterm2":
-          return "sixel";
-        case "sixel":
-          return "halfBlock";
-        case "halfBlock":
-          return "braille";
-        case "braille":
-          return "ascii";
-        default:
-          return "ascii";
-      }
-    },
-    [],
-  );
-
-  /**
-   * Handles support detection feedback from child components.
-   *
-   * If the current protocol is supported, marks the support check as complete.
-   * If not supported, attempts to fall back to the next protocol in the hierarchy.
-   *
-   * @param isSupported - Whether the current protocol is supported
-   */
-  const handleSupportDetected = useCallback(
-    (isSupported: boolean) => {
-      if (isSupported) {
-        // Current protocol is supported
-        return;
-      }
-      // Try fallback protocol
-      const nextProtocol = getFallbackProtocol(protocol);
-      setProtocol(nextProtocol);
-    },
-    [protocol, getFallbackProtocol],
-  );
-
-  // Force a protocol if specified
-  if (specifiedProtocol !== "auto") {
-    return (
-      <ImageRenderer
-        protocol={specifiedProtocol}
-        {...props}
-        onSupportDetected={() => {}}
-      />
-    );
-  }
-
-  return (
-    <ImageRenderer
-      protocol={protocol}
-      {...props}
-      onSupportDetected={handleSupportDetected}
-    />
-  );
+  return <ImageRenderer protocol={protocol} key={protocol} {...props} />;
 }
 
 export default Image;

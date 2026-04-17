@@ -13,16 +13,14 @@ export interface ImageProps {
    * Supports all image formats supported by sharp (JPEG, PNG, WebP, AVIF, GIF, SVG, TIFF)
    */
   src: string;
-  /** Optional width constraint in terminal characters/cells */
-  width?: number;
-  /** Optional height constraint in terminal characters/cells */
-  height?: number;
+  /** Width in terminal cells or a percentage */
+  width: number;
+  /** Height in terminal cells or a percentage */
+  height: number;
   /** Alternative text displayed while loading or on error */
   alt?: string;
   /** Supports partially loaded image reading */
   allowPartial?: boolean;
-  /** Callback function to notify parent component about protocol support detection */
-  onSupportDetected: (isSupported: boolean) => void;
 }
 
 /**
@@ -34,8 +32,8 @@ export interface ImageProps {
  * @interface ImageProtocol
  */
 export interface ImageProtocol {
-  /** Function that renders the image using this protocol */
-  render(props: ImageProps): JSX.Element | null;
   /** Unique identifier for this protocol */
   name: string;
+  /** Function that renders the image using this protocol */
+  render(props: ImageProps): JSX.Element | null;
 }
