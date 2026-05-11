@@ -1,6 +1,5 @@
 import { Box, type DOMElement, Newline, Text, useStdout } from "ink";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type sharp from "sharp";
 import {
   useTerminalCapabilities,
   useTerminalDimensions,
@@ -8,7 +7,12 @@ import {
 // import { backgroundContext } from "ink";
 import usePosition from "../../hooks/usePosition.js";
 import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
-import { calculateImageSize, fetchImage } from "../../utils/image.js";
+import {
+  calculateImageSize,
+  fetchImage,
+  getPngBuffer,
+  type ImageOutputInfo,
+} from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
 /**
@@ -84,9 +88,11 @@ function ITerm2Image(props: ImageProps) {
       }
       setHasError(false);
 
-      const resizedImage = await image
-        .png() // iTerm2 expects a FILE, not raw pixel data
-        .toBuffer({ resolveWithObject: true });
+      image.resize({
+        w: width * terminalDimensions.cellWidth,
+        h: height * terminalDimensions.cellHeight,
+      });
+      const resizedImage = await getPngBuffer(image);
 
       const output = toITerm2(resizedImage, {
         width: width * terminalDimensions.cellWidth,
@@ -231,18 +237,18 @@ function ITerm2Image(props: ImageProps) {
 /**
  * Converts processed image data to ITerm2 format.
  *
- * This function takes raw RGBA image data from Sharp and converts it to
+ * This function takes raw RGBA image data from Jimp and converts it to
  * the ITerm2 graphics format using the node-iTerm2 library. The resulting
  * string contains escape sequences that can be written directly to a
  * terminal that supports ITerm2 graphics.
  *
  * @note We do not use auto width and height because we might adjust it based on scale factor
  *
- * @param imageData - Raw image data with buffer and metadata from Sharp
+ * @param imageData - Raw image data with buffer and metadata from Jimp
  * @returns ITerm2-formatted string
  */
 function toITerm2(
-  imageData: { data: Buffer; info: sharp.OutputInfo },
+  imageData: { data: Buffer; info: ImageOutputInfo },
   options: { width: number; height: number },
 ) {
   const { data, info } = imageData;

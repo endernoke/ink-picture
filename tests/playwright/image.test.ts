@@ -25,7 +25,7 @@ test.describe.configure({
 test("renders standalone image", async ({ ctx }) => {
   const ps = await runFixture(
     "simple-image.tsx",
-    ["--src", "../example/images/full.png"],
+    ["--src", "../../example/images/full.png"],
     ctx.terminalProxy,
   );
   await ps.waitForExit();
@@ -60,7 +60,7 @@ test("renders sixel image", async ({ ctx }) => {
     "simple-image.tsx",
     [
       "--src",
-      "../example/images/full.png",
+      "../../example/images/full.png",
       "--protocol",
       "sixel",
       "--keepalive",
@@ -88,7 +88,7 @@ test("renders iip image", async ({ ctx }) => {
     "simple-image.tsx",
     [
       "--src",
-      "../example/images/full.png",
+      "../../example/images/full.png",
       "--protocol",
       "iterm2",
       "--keepalive",
@@ -116,7 +116,7 @@ test("renders kitty image", async ({ ctx }) => {
     "simple-image.tsx",
     [
       "--src",
-      "../example/images/full.png",
+      "../../example/images/full.png",
       "--protocol",
       "kitty",
       "--keepalive",
@@ -142,7 +142,7 @@ test("renders kitty image", async ({ ctx }) => {
 test("keeps sixel image after exit", async ({ ctx }) => {
   const ps = await runFixture(
     "simple-image.tsx",
-    ["--src", "../example/images/full.png", "--protocol", "sixel"],
+    ["--src", "../../example/images/full.png", "--protocol", "sixel"],
     ctx.terminalProxy,
   );
   await ps.waitForExit();
@@ -158,7 +158,7 @@ test("keeps sixel image after exit", async ({ ctx }) => {
 test("keeps iip image after exit", async ({ ctx }) => {
   const ps = await runFixture(
     "simple-image.tsx",
-    ["--src", "../example/images/full.png", "--protocol", "iterm2"],
+    ["--src", "../../example/images/full.png", "--protocol", "iterm2"],
     ctx.terminalProxy,
   );
   await ps.waitForExit();
@@ -174,7 +174,7 @@ test("keeps iip image after exit", async ({ ctx }) => {
 test("keeps kitty image after exit", async ({ ctx }) => {
   const ps = await runFixture(
     "simple-image.tsx",
-    ["--src", "../example/images/full.png", "--protocol", "kitty"],
+    ["--src", "../../example/images/full.png", "--protocol", "kitty"],
     ctx.terminalProxy,
   );
   await ps.waitForExit();

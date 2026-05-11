@@ -1,8 +1,12 @@
 import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
 import React, { useEffect, useRef, useState } from "react";
-import type sharp from "sharp";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
-import { calculateImageSize, fetchImage } from "../../utils/image.js";
+import {
+  calculateImageSize,
+  fetchImage,
+  getRawPixels,
+  type ImageOutputInfo,
+} from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
 /**
@@ -51,12 +55,8 @@ function BrailleImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const resizedImage = await image
-        .resize(width * 2, height * 4, {
-          fit: "fill",
-        })
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+      image.resize({ w: width * 2, h: height * 4 });
+      const resizedImage = await getRawPixels(image);
 
       const output = await toBraille(resizedImage);
       setImageOutput(output);
@@ -112,10 +112,10 @@ function BrailleImage(props: ImageProps) {
  *
  * Reference: https://en.wikipedia.org/wiki/Braille_Patterns#Identifying,_naming_and_ordering
  *
- * @param imageData - Raw image data from Sharp with buffer and metadata
+ * @param imageData - Raw image data from Jimp with buffer and metadata
  * @returns Promise resolving to string of Braille Unicode characters
  */
-async function toBraille(imageData: { data: Buffer; info: sharp.OutputInfo }) {
+async function toBraille(imageData: { data: Buffer; info: ImageOutputInfo }) {
   const { data, info } = imageData;
   const { width, height, channels } = info;
 
@@ -201,7 +201,8 @@ function rgbaToBlackOrWhite({
   const red = r;
   const green = g;
   const blue = b;
-  const alpha = a;
+  // Jimp bitmap data stores alpha as 0-255, normalize to 0-1
+  const alpha = a / 255;
 
   // 2. Calculate the perceived luminance using the formula for relative luminance (Y).
   //    This formula is based on the sRGB color space and takes into account the human eye's sensitivity to different colors.

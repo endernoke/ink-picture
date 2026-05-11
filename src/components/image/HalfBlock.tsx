@@ -1,9 +1,12 @@
 import chalk from "chalk";
 import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
 import React, { useEffect, useRef, useState } from "react";
-import type sharp from "sharp";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
-import { fetchImage } from "../../utils/image.js";
+import {
+  fetchImage,
+  getRawPixels,
+  type ImageOutputInfo,
+} from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
 /**
@@ -44,12 +47,8 @@ function HalfBlockImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const resizedImage = await image
-        .resize(width, height * 2, {
-          fit: "fill",
-        })
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+      image.resize({ w: width, h: height * 2 });
+      const resizedImage = await getRawPixels(image);
 
       const output = await toHalfBlocks(resizedImage);
       setImageOutput(output);
@@ -106,12 +105,12 @@ const HALF_BLOCK = "\u2584";
  *
  * Adapted from https://github.com/sindresorhus/terminal-image
  *
- * @param imageData - Raw image data from Sharp with buffer and metadata
+ * @param imageData - Raw image data from Jimp with buffer and metadata
  * @returns Promise resolving to formatted string with colored half-block characters
  */
 async function toHalfBlocks(imageData: {
   data: Buffer;
-  info: sharp.OutputInfo;
+  info: ImageOutputInfo;
 }) {
   const { data, info } = imageData;
   const { width, height, channels } = info;

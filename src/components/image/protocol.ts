@@ -10,7 +10,7 @@ import type { JSX } from "react";
 export interface ImageProps {
   /**
    * The source URL or file path of the image to render
-   * Supports all image formats supported by sharp (JPEG, PNG, WebP, AVIF, GIF, SVG, TIFF)
+   * Supports all image formats supported by jimp (JPEG, PNG, WebP, GIF, BMP, TIFF)
    */
   src: string;
   /** Width in terminal cells or a percentage */
