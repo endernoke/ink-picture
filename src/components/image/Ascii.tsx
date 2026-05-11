@@ -1,9 +1,12 @@
 import chalk from "chalk";
 import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
 import React, { useEffect, useRef, useState } from "react";
-import type sharp from "sharp";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
-import { fetchImage } from "../../utils/image.js";
+import {
+  fetchImage,
+  getRawPixels,
+  type ImageOutputInfo,
+} from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
 /**
@@ -42,10 +45,8 @@ function AsciiImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const resizedImage = await image
-        .resize(width, height, { fit: "fill" })
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+      image.resize({ w: width, h: height });
+      const resizedImage = await getRawPixels(image);
 
       const output = await toAscii(
         resizedImage,
@@ -89,7 +90,7 @@ function AsciiImage(props: ImageProps) {
 async function toAscii(
   imageData: {
     data: Buffer;
-    info: sharp.OutputInfo;
+    info: ImageOutputInfo;
   },
   colored: boolean = true,
 ) {

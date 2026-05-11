@@ -1,6 +1,5 @@
 import { Box, type DOMElement, Newline, Text, useStdout } from "ink";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type sharp from "sharp";
 // import { backgroundContext } from "ink";
 import { image2sixel } from "sixel";
 import {
@@ -9,7 +8,12 @@ import {
 } from "../../context/TerminalInfo.js";
 import usePosition from "../../hooks/usePosition.js";
 import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
-import { calculateImageSize, fetchImage } from "../../utils/image.js";
+import {
+  calculateImageSize,
+  fetchImage,
+  getRawPixels,
+  type ImageOutputInfo,
+} from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
 /**
@@ -85,17 +89,11 @@ function SixelImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const resizedImage = await image
-        .resize(
-          width * terminalDimensions.cellWidth,
-          height * terminalDimensions.cellHeight,
-          {
-            fit: "fill",
-          },
-        )
-        .ensureAlpha() // node-sixel requires alpha channel to be present
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+      image.resize({
+        w: width * terminalDimensions.cellWidth,
+        h: height * terminalDimensions.cellHeight,
+      });
+      const resizedImage = await getRawPixels(image);
 
       const output = await toSixel(resizedImage);
       setImageOutput(output);
@@ -237,15 +235,15 @@ function SixelImage(props: ImageProps) {
 /**
  * Converts processed image data to Sixel format.
  *
- * This function takes raw RGBA image data from Sharp and converts it to
+ * This function takes raw RGBA image data from Jimp and converts it to
  * the Sixel graphics format using the node-sixel library. The resulting
  * string contains escape sequences that can be written directly to a
  * terminal that supports Sixel graphics.
  *
- * @param imageData - Raw image data with buffer and metadata from Sharp
+ * @param imageData - Raw image data with buffer and metadata from Jimp
  * @returns Promise resolving to Sixel-formatted string
  */
-async function toSixel(imageData: { data: Buffer; info: sharp.OutputInfo }) {
+async function toSixel(imageData: { data: Buffer; info: ImageOutputInfo }) {
   const { data, info } = imageData;
   const { width, height } = info;
   const u8Data = new Uint8Array(data);

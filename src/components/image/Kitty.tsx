@@ -83,18 +83,15 @@ function KittyImage(props: ImageProps) {
       }
       setHasError(false);
 
-      const resizedImage = image.resize(
-        width * terminalDimensions.cellWidth,
-        height * terminalDimensions.cellHeight,
-        {
-          fit: "fill",
-        },
-      );
+      image.resize({
+        w: width * terminalDimensions.cellWidth,
+        h: height * terminalDimensions.cellHeight,
+      });
 
       try {
         const imageId = generateKittyId();
 
-        const data = await resizedImage.png().toBuffer();
+        const data = await image.getBuffer("image/png");
         const chunkSize = 4096; // Kitty protocol pixel data max chunk size
         const base64Data = data.toString("base64");
 
