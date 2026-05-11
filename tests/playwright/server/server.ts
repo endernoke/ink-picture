@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const demoRoot = __dirname;
-const nodeModulesRoot = path.join(__dirname, "..", "..", "node_modules");
+const nodeModulesRoot = path.join(__dirname, "..", "..", "..", "node_modules");
 
 function serveFile(filePath: string, res: http.ServerResponse): void {
   fs.readFile(filePath, (err, data) => {

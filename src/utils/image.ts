@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { Jimp } from "jimp";
 import fetch from "node-fetch";
 
@@ -16,6 +17,9 @@ export async function fetchImage(
   _allowPartial = false,
 ): Promise<JimpImage | undefined> {
   try {
+    if (src.startsWith("file://")) {
+      return await Jimp.read(fileURLToPath(src));
+    }
     return await Jimp.read(src);
   } catch {
     return undefined;

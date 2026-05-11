@@ -1,7 +1,7 @@
 import process from "node:process";
 import { Box, render, Text } from "ink";
 import React from "react";
-import Image, { ImageProtocolName, TerminalInfoProvider } from "../../src";
+import Image, { ImageProtocolName, TerminalInfoProvider } from "../../../src";
 
 function parseArgs(args: string[]) {
   const result: Record<string, boolean | string> = {};

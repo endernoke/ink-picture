@@ -1,6 +1,6 @@
 import { render, Text } from "ink";
 import React from "react";
-import { TerminalInfoProvider } from "../../src/context/TerminalInfo.js";
+import { TerminalInfoProvider } from "../../../src/context/TerminalInfo.js";
 
 const CtrlCTest = () => {
   setInterval(() => {}, 1000); // Keep the process alive
