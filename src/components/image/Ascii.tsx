@@ -35,8 +35,25 @@ function AsciiImage(props: ImageProps) {
   const containerRef = useRef<DOMElement | null>(null);
   const terminalCapabilities = useTerminalCapabilities();
   const { src, width, height, alt, allowPartial } = props;
+  const [measuredWidth, setMeasuredWidth] = useState(0);
+  const [measuredHeight, setMeasuredHeight] = useState(0);
+
+  const needsMeasure = typeof width === "string" || typeof height === "string";
+  useEffect(() => {
+    if (!needsMeasure) return;
+    if (!containerRef.current) return;
+
+    const { width: w, height: h } = measureElement(containerRef.current);
+    if (w > 0) setMeasuredWidth(w);
+    if (h > 0) setMeasuredHeight(h);
+  });
+
+  const resolvedWidth = typeof width === "number" ? width : measuredWidth;
+  const resolvedHeight = typeof height === "number" ? height : measuredHeight;
 
   useEffect(() => {
+    if (resolvedWidth === 0 || resolvedHeight === 0) return;
+
     const generateImageOutput = async () => {
       const image = await fetchImage(src, allowPartial);
       if (!image) {
@@ -45,7 +62,7 @@ function AsciiImage(props: ImageProps) {
       }
       setHasError(false);
 
-      image.resize({ w: width, h: height });
+      image.resize({ w: resolvedWidth, h: resolvedHeight });
       const resizedImage = await getRawPixels(image);
 
       const output = await toAscii(
@@ -55,7 +72,7 @@ function AsciiImage(props: ImageProps) {
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [src, width, height, terminalCapabilities, allowPartial]);
+  }, [src, resolvedWidth, resolvedHeight, terminalCapabilities, allowPartial]);
 
   return (
     <Box
