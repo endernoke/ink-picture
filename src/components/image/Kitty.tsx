@@ -159,7 +159,12 @@ function KittyImage(props: ImageProps) {
     // assuming that the terminal implements the kitty protocol correctly
     // but some terminals do not respect the 'C=1' parameter
     stdout.write("\x1b7"); // Save cursor position
-    stdout.write(cursorUp(componentPosition.appHeight - componentPosition.row));
+    stdout.write(
+      cursorUp(componentPosition.appHeight - componentPosition.row, {
+        appHeight: componentPosition.appHeight,
+        terminalHeight: stdout.rows,
+      }),
+    );
     stdout.write("\r");
     stdout.write(cursorForward(componentPosition.col));
 

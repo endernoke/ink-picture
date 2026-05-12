@@ -161,8 +161,16 @@ class TerminalProxy {
         const results: Array<{ x: number; y: number; hasGraphic: boolean }> =
           [];
 
-        for (let row = y as number; row < (height as number); row++) {
-          for (let col = x as number; col < (width as number); col++) {
+        for (
+          let row = y as number;
+          row < (y as number) + (height as number);
+          row++
+        ) {
+          for (
+            let col = x as number;
+            col < (x as number) + (width as number);
+            col++
+          ) {
             results.push({
               x: col,
               y: row,
