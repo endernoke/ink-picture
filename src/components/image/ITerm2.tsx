@@ -158,7 +158,10 @@ function ITerm2Image(props: ImageProps) {
     const renderTimeout = setTimeout(() => {
       stdout.write("\x1b7"); // Save cursor position
       stdout.write(
-        cursorUp(componentPosition.appHeight - componentPosition.row),
+        cursorUp(componentPosition.appHeight - componentPosition.row, {
+          appHeight: componentPosition.appHeight,
+          terminalHeight: stdout.rows,
+        }),
       );
       stdout.write("\r");
       stdout.write(cursorForward(componentPosition.col));
@@ -185,7 +188,10 @@ function ITerm2Image(props: ImageProps) {
 
       stdout.write("\x1b7"); // Save cursor position
       stdout.write(
-        cursorUp(componentPosition.appHeight - componentPosition.row),
+        cursorUp(componentPosition.appHeight - componentPosition.row, {
+          appHeight: componentPosition.appHeight,
+          terminalHeight: stdout.rows,
+        }),
       );
       for (let i = 0; i < previousRenderBoundingBox.height; i++) {
         stdout.write("\r");
