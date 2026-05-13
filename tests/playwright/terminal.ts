@@ -150,6 +150,30 @@ class TerminalProxy {
     );
   }
 
+  public async getCellBgColor(
+    x: number,
+    y: number,
+  ): Promise<TerminalColorInfo | undefined> {
+    return this._page.evaluate(
+      ([term, x, y]) => {
+        const cell = (term as Terminal).buffer.active
+          .getLine(y as number)
+          ?.getCell(x as number);
+        if (!cell) {
+          return undefined;
+        }
+        return {
+          color: cell.getBgColor(),
+          mode: cell.getBgColorMode(),
+          isDefault: cell.isBgDefault(),
+          isPalette: cell.isBgPalette(),
+          isRgb: cell.isBgRGB(),
+        };
+      },
+      [await this.getTerm(), x, y],
+    );
+  }
+
   public async cellsContainGraphics(
     x: number,
     y: number,
@@ -187,12 +211,68 @@ class TerminalProxy {
     );
   }
 
+  public async getCellsBgColor(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): Promise<Array<{ x: number; y: number } & TerminalColorInfo>> {
+    return this._page.evaluate(
+      ([term, x, y, width, height]) => {
+        const results: Array<{ x: number; y: number } & TerminalColorInfo> = [];
+
+        const buffer = (term as Terminal).buffer.active;
+
+        for (
+          let row = y as number;
+          row < (y as number) + (height as number);
+          row++
+        ) {
+          const line = buffer.getLine(row);
+
+          for (
+            let col = x as number;
+            col < (x as number) + (width as number);
+            col++
+          ) {
+            const cell = line?.getCell(col);
+
+            if (!cell) {
+              continue;
+            }
+
+            results.push({
+              x: col,
+              y: row,
+              color: cell.getBgColor(),
+              mode: cell.getBgColorMode(),
+              isDefault: cell.isBgDefault(),
+              isPalette: cell.isBgPalette(),
+              isRgb: cell.isBgRGB(),
+            });
+          }
+        }
+
+        return results;
+      },
+      [await this.getTerm(), x, y, width, height],
+    );
+  }
+
   async getCols(): Promise<number> {
     return this._page.evaluate(
       ([term]) => (term as Terminal).cols,
       [await this.getTerm()],
     );
   }
+}
+
+interface TerminalColorInfo {
+  color: number;
+  mode: number;
+  isDefault: boolean;
+  isPalette: boolean;
+  isRgb: boolean;
 }
 
 export interface TestContext {

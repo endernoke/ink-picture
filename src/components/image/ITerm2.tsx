@@ -135,6 +135,7 @@ function ITerm2Image(props: ImageProps) {
   useLayoutEffect(() => {
     if (!imageOutput) return;
     if (!componentPosition) return;
+    if (!terminalDimensions) return;
     if (
       stdout.rows - componentPosition.appHeight + componentPosition.row < 0 ||
       componentPosition.col > stdout.columns
@@ -171,8 +172,8 @@ function ITerm2Image(props: ImageProps) {
       previousRenderBoundingBox = {
         row: stdout.rows - componentPosition.appHeight + componentPosition.row,
         col: componentPosition.col,
-        width: width * terminalDimensions!.cellWidth,
-        height: height * terminalDimensions!.cellHeight,
+        width: width,
+        height: height,
       };
     }, 100); // Delay to allow Ink/terminal to finish its render
 

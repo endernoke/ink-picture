@@ -104,29 +104,32 @@ test.describe("advanced protocols", () => {
   }
 });
 
-test.describe("image persistence after exit", () => {
-  test.describe.configure({
-    retries: 2,
-  });
-
-  for (const protocol of advancedImageProtocols) {
-    test(`${protocol}`, async ({ ctx }) => {
-      const ps = await runFixture(
-        "simple-image.tsx",
-        ["--src", "../../example/images/full.png", "--protocol", protocol],
-        ctx.terminalProxy,
-      );
-      await ps.waitForExit();
-      const cells = await ctx.terminalProxy.cellsContainGraphics(0, 0, 4, 2);
-      for (const cell of cells) {
-        await expect(
-          cell.hasGraphic,
-          `Cell (${cell.x}, ${cell.y}) should contain graphics`,
-        ).toBe(true);
-      }
+// Skipping for now because there's currently a bug in xterm.js that does not overwrite image with text
+// See https://github.com/xtermjs/xterm.js/issues/5860
+test.describe
+  .skip("image persistence after exit", () => {
+    test.describe.configure({
+      retries: 2,
     });
-  }
-});
+
+    for (const protocol of advancedImageProtocols) {
+      test.fail(`${protocol}`, async ({ ctx }) => {
+        const ps = await runFixture(
+          "simple-image.tsx",
+          ["--src", "../../example/images/full.png", "--protocol", protocol],
+          ctx.terminalProxy,
+        );
+        await ps.waitForExit();
+        const cells = await ctx.terminalProxy.cellsContainGraphics(0, 0, 4, 2);
+        for (const cell of cells) {
+          await expect(
+            cell.hasGraphic,
+            `Cell (${cell.x}, ${cell.y}) should contain graphics`,
+          ).toBe(true);
+        }
+      });
+    }
+  });
 
 test.describe("vertical offset", () => {
   for (const protocol of advancedImageProtocols) {
@@ -171,3 +174,35 @@ test.describe("vertical offset", () => {
     }
   }
 });
+
+// Skipping for now because there's currently a bug in xterm.js that does not overwrite image with text
+// See https://github.com/xtermjs/xterm.js/issues/5860
+test.describe
+  .skip("background color", () => {
+    for (const protocol of ["sixel", "iterm2"]) {
+      test(`restores background color after ${protocol} image cleanup`, async ({
+        ctx,
+      }) => {
+        const ps = await runFixture(
+          "background-color.tsx",
+          [
+            "--src",
+            "../../example/images/full.png",
+            "--protocol",
+            protocol,
+            "--bgColor",
+            "red",
+          ],
+          ctx.terminalProxy,
+        );
+        await ps.waitForExit();
+        const cells = await ctx.terminalProxy.getCellsBgColor(0, 0, 4, 2);
+        for (const cell of cells) {
+          await expect(
+            cell.color === 0xff0000,
+            `Cell (${cell.x}, ${cell.y}) should have the correct background color`,
+          ).toBe(true);
+        }
+      });
+    }
+  });
