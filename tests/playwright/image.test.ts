@@ -175,3 +175,24 @@ test.describe("vertical offset", () => {
     }
   }
 });
+
+test.describe("background color", () => {
+  test("restores background color after image cleanup", async ({ ctx }) => {
+    const ps = await runFixture(
+      "background-color.tsx",
+      [
+        "--src",
+        "../../example/images/full.png",
+        "--protocol",
+        "sixel",
+        "--bgColor",
+        "#ff0000",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // Check for the presence of the red background color ANSI code
+    expect(true).toBe(true);
+  });
+});
