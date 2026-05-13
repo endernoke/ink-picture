@@ -17,16 +17,38 @@ const test = base.extend<ImageTestFixtures>({
   },
 });
 
+function checkCellsHaveGraphics(
+  cells: { x: number; y: number; hasGraphic: boolean }[],
+): boolean {
+  for (const cell of cells) {
+    if (!cell.hasGraphic) {
+      return false;
+    }
+  }
+  return true;
+}
+
+const basicImageProtocols = ["ascii", "braille", "halfBlock"];
+const advancedImageProtocols = ["sixel", "iterm2", "kitty"];
+const imageProtocols = [...basicImageProtocols, ...advancedImageProtocols];
+
 test.describe("basic rendering", () => {
   test("renders standalone image", async ({ ctx }) => {
     const ps = await runFixture(
       "simple-image.tsx",
-      ["--src", "../../example/images/full.png"],
+      [
+        "--src",
+        "../../example/images/full.png",
+        "--width",
+        "4",
+        "--height",
+        "2",
+      ],
       ctx.terminalProxy,
     );
     await ps.waitForExit();
     const bufferOutput = await ctx.terminalProxy.getBufferAsString();
-    expect(bufferOutput).toMatch(/\u2584\u2584\s*\n\u2584\u2584/);
+    expect(bufferOutput).toMatch(/^\u2584{4}\s*\n\u2584{4}\s*$/);
   });
 
   test("shows fallback on load failure", async ({ ctx }) => {
@@ -40,32 +62,6 @@ test.describe("basic rendering", () => {
     expect(bufferOutput).toContain("Load failed");
   });
 });
-
-function checkCellsHaveGraphics(
-  cells: { x: number; y: number; hasGraphic: boolean }[],
-): boolean {
-  for (const cell of cells) {
-    if (!cell.hasGraphic) {
-      return false;
-    }
-  }
-  return true;
-}
-
-const advancedImageProtocols = ["sixel", "iterm2", "kitty"];
-
-const verticalOffsetAppHeightCases = [
-  {
-    label: "app height < terminal height",
-    appHeight: "4",
-    expectedImageLocation: [0, 1, 4, 2],
-  },
-  {
-    label: "app height >= terminal height",
-    appHeight: "50",
-    expectedImageLocation: [0, 47, 4, 2],
-  },
-];
 
 test.describe("advanced protocols", () => {
   for (const protocol of advancedImageProtocols) {
@@ -130,6 +126,113 @@ test.describe
       });
     }
   });
+
+test.describe("percentage sizing", () => {
+  test("100% size image", async ({ ctx }) => {
+    const ps = await runFixture(
+      "percentage-size.tsx",
+      [
+        "--src",
+        "../../example/images/full.png",
+        "--width",
+        "100%",
+        "--height",
+        "100%",
+        "--parentWidth",
+        "4",
+        "--parentHeight",
+        "2",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // expect 2 lines of 4 half-block chars each
+    expect(bufferOutput).toMatch(/^\u2584{4}[ \t]*(\n\u2584{4}[ \t]*){1}\s*$/);
+  });
+
+  test("50% size image", async ({ ctx }) => {
+    const ps = await runFixture(
+      "percentage-size.tsx",
+      [
+        "--src",
+        "../../example/images/full.png",
+        "--width",
+        "50%",
+        "--height",
+        "50%",
+        "--parentWidth",
+        "4",
+        "--parentHeight",
+        "2",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // expect 1 line of 2 half-block chars
+    expect(bufferOutput).toMatch(/^\u2584{2}\s*$/);
+  });
+
+  test("percentage width", async ({ ctx }) => {
+    const ps = await runFixture(
+      "percentage-size.tsx",
+      [
+        "--src",
+        "../../example/images/full.png",
+        "--width",
+        "100%",
+        "--height",
+        "2",
+        "--parentWidth",
+        "4",
+        "--parentHeight",
+        "2",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // expect 2 lines of 4 half-block chars each, since height is fixed at 2 lines but width is 100% of parent
+    expect(bufferOutput).toMatch(/^\u2584{4}\s*\n\u2584{4}\s*$/);
+  });
+
+  test("percentage height", async ({ ctx }) => {
+    const ps = await runFixture(
+      "percentage-size.tsx",
+      [
+        "--src",
+        "../../example/images/full.png",
+        "--width",
+        "4",
+        "--height",
+        "100%",
+        "--parentWidth",
+        "4",
+        "--parentHeight",
+        "2",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // expect 2 lines of 4 half-block chars each, since width is fixed at 4 chars but height is 100% of parent
+    expect(bufferOutput).toMatch(/^\u2584{4}\s*\n\u2584{4}\s*$/);
+  });
+});
+
+const verticalOffsetAppHeightCases = [
+  {
+    label: "app height < terminal height",
+    appHeight: "4",
+    expectedImageLocation: [0, 1, 4, 2],
+  },
+  {
+    label: "app height >= terminal height",
+    appHeight: "50",
+    expectedImageLocation: [0, 47, 4, 2],
+  },
+];
 
 test.describe("vertical offset", () => {
   for (const protocol of advancedImageProtocols) {

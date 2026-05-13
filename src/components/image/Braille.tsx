@@ -45,8 +45,25 @@ function BrailleImage(props: ImageProps) {
   const [hasError, setHasError] = useState<boolean>(false);
   const containerRef = useRef<DOMElement | null>(null);
   const { src, width, height, alt, allowPartial } = props;
+  const [measuredWidth, setMeasuredWidth] = useState(0);
+  const [measuredHeight, setMeasuredHeight] = useState(0);
+
+  const needsMeasure = typeof width === "string" || typeof height === "string";
+  useEffect(() => {
+    if (!needsMeasure) return;
+    if (!containerRef.current) return;
+
+    const { width: w, height: h } = measureElement(containerRef.current);
+    if (w > 0) setMeasuredWidth(w);
+    if (h > 0) setMeasuredHeight(h);
+  });
+
+  const resolvedWidth = typeof width === "number" ? width : measuredWidth;
+  const resolvedHeight = typeof height === "number" ? height : measuredHeight;
 
   useEffect(() => {
+    if (resolvedWidth === 0 || resolvedHeight === 0) return;
+
     const generateImageOutput = async () => {
       const image = await fetchImage(src, allowPartial);
       if (!image) {
@@ -55,14 +72,14 @@ function BrailleImage(props: ImageProps) {
       }
       setHasError(false);
 
-      image.resize({ w: width * 2, h: height * 4 });
+      image.resize({ w: resolvedWidth * 2, h: resolvedHeight * 4 });
       const resizedImage = await getRawPixels(image);
 
       const output = await toBraille(resizedImage);
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [src, width, height, allowPartial]);
+  }, [src, resolvedWidth, resolvedHeight, allowPartial]);
 
   return (
     <Box

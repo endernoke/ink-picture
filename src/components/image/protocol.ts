@@ -14,9 +14,9 @@ export interface ImageProps {
    */
   src: string;
   /** Width in terminal cells or a percentage */
-  width: number;
+  width: number | string;
   /** Height in terminal cells or a percentage */
-  height: number;
+  height: number | string;
   /** Alternative text displayed while loading or on error */
   alt?: string;
   /** Supports partially loaded image reading */

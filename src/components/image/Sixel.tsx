@@ -1,4 +1,11 @@
-import { Box, type DOMElement, Newline, Text, useStdout } from "ink";
+import {
+  Box,
+  type DOMElement,
+  measureElement,
+  Newline,
+  Text,
+  useStdout,
+} from "ink";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { image2sixel } from "sixel";
 import {
@@ -65,6 +72,21 @@ function SixelImage(props: ImageProps) {
   const terminalDimensions = useTerminalDimensions();
   const shouldCleanupRef = useRef<boolean>(true);
   const { src, width, height, alt, allowPartial } = props;
+  const [measuredWidth, setMeasuredWidth] = useState(0);
+  const [measuredHeight, setMeasuredHeight] = useState(0);
+
+  const needsMeasure = typeof width === "string" || typeof height === "string";
+  useEffect(() => {
+    if (!needsMeasure) return;
+    if (!containerRef.current) return;
+
+    const { width: w, height: h } = measureElement(containerRef.current);
+    if (w > 0) setMeasuredWidth(w);
+    if (h > 0) setMeasuredHeight(h);
+  });
+
+  const resolvedWidth = typeof width === "number" ? width : measuredWidth;
+  const resolvedHeight = typeof height === "number" ? height : measuredHeight;
 
   /**
    * Main effect for image processing and Sixel conversion.
@@ -78,9 +100,10 @@ function SixelImage(props: ImageProps) {
    * 6. Tracks actual size in terminal cells for cleanup purposes
    */
   useEffect(() => {
-    const generateImageOutput = async () => {
-      if (!terminalDimensions) return;
+    if (resolvedWidth === 0 || resolvedHeight === 0) return;
+    if (!terminalDimensions) return;
 
+    const generateImageOutput = async () => {
       const image = await fetchImage(src, allowPartial);
       if (!image) {
         setHasError(true);
@@ -89,8 +112,8 @@ function SixelImage(props: ImageProps) {
       setHasError(false);
 
       image.resize({
-        w: width * terminalDimensions.cellWidth,
-        h: height * terminalDimensions.cellHeight,
+        w: resolvedWidth * terminalDimensions.cellWidth,
+        h: resolvedHeight * terminalDimensions.cellHeight,
       });
       const resizedImage = await getRawPixels(image);
 
@@ -98,7 +121,7 @@ function SixelImage(props: ImageProps) {
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [src, width, height, terminalDimensions, allowPartial]);
+  }, [src, resolvedWidth, resolvedHeight, terminalDimensions, allowPartial]);
 
   /**
    * Critical rendering effect for Sixel image display.
@@ -168,8 +191,8 @@ function SixelImage(props: ImageProps) {
       previousRenderBoundingBox = {
         row: stdout.rows - componentPosition.appHeight + componentPosition.row,
         col: componentPosition.col,
-        width: width,
-        height: height,
+        width: resolvedWidth,
+        height: resolvedHeight,
       };
     }, 100); // Delay to allow Ink/terminal to finish its render
 

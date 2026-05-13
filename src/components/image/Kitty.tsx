@@ -1,4 +1,11 @@
-import { Box, type DOMElement, Newline, Text, useStdout } from "ink";
+import {
+  Box,
+  type DOMElement,
+  measureElement,
+  Newline,
+  Text,
+  useStdout,
+} from "ink";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   useTerminalCapabilities,
@@ -59,9 +66,24 @@ function KittyImage(props: ImageProps) {
   const terminalDimensions = useTerminalDimensions();
   const shouldCleanupRef = useRef<boolean>(true);
   const { src, width, height, alt, allowPartial } = props;
+  const [measuredWidth, setMeasuredWidth] = useState(0);
+  const [measuredHeight, setMeasuredHeight] = useState(0);
 
   // TODO: If we upgrade to Ink 6 we will need to deal with Box background colors when rendering/cleaning up
   // const inheritedBackgroundColor = useContext(backgroundContext);
+
+  const needsMeasure = typeof width === "string" || typeof height === "string";
+  useEffect(() => {
+    if (!needsMeasure) return;
+    if (!containerRef.current) return;
+
+    const { width: w, height: h } = measureElement(containerRef.current);
+    if (w > 0) setMeasuredWidth(w);
+    if (h > 0) setMeasuredHeight(h);
+  });
+
+  const resolvedWidth = typeof width === "number" ? width : measuredWidth;
+  const resolvedHeight = typeof height === "number" ? height : measuredHeight;
 
   /**
    * Main effect for image processing and Kitty conversion.
@@ -73,9 +95,10 @@ function KittyImage(props: ImageProps) {
    * 4. Transfers image data to the terminal using Kitty protocol
    */
   useEffect(() => {
-    const generateImageOutput = async () => {
-      if (!terminalDimensions) return;
+    if (resolvedWidth === 0 || resolvedHeight === 0) return;
+    if (!terminalDimensions) return;
 
+    const generateImageOutput = async () => {
       const image = await fetchImage(src, allowPartial);
       if (!image) {
         setHasError(true);
@@ -84,8 +107,8 @@ function KittyImage(props: ImageProps) {
       setHasError(false);
 
       image.resize({
-        w: width * terminalDimensions.cellWidth,
-        h: height * terminalDimensions.cellHeight,
+        w: resolvedWidth * terminalDimensions.cellWidth,
+        h: resolvedHeight * terminalDimensions.cellHeight,
       });
 
       try {
@@ -121,7 +144,14 @@ function KittyImage(props: ImageProps) {
       }
     };
     generateImageOutput();
-  }, [src, width, height, terminalDimensions, allowPartial, stdout.write]);
+  }, [
+    src,
+    resolvedWidth,
+    resolvedHeight,
+    terminalDimensions,
+    allowPartial,
+    stdout.write,
+  ]);
 
   /**
    * Critical rendering effect for Kitty image display.
