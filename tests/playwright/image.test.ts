@@ -17,10 +17,6 @@ const test = base.extend<ImageTestFixtures>({
   },
 });
 
-test.describe.configure({
-  mode: "parallel",
-});
-
 test.describe("basic rendering", () => {
   test("renders standalone image", async ({ ctx }) => {
     const ps = await runFixture(

@@ -22,5 +22,6 @@ const config: PlaywrightTestConfig = {
   use: {
     baseURL: "http://localhost:3000",
   },
+  fullyParallel: true,
 };
 export default config;
