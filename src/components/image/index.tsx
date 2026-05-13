@@ -1,3 +1,4 @@
+import { Box, Text, useIsScreenReaderEnabled } from "ink";
 import React, { useCallback, useState } from "react";
 import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
 import useProtocol from "../../hooks/useProtocol.js";
@@ -95,7 +96,23 @@ function Image({
   protocol: specifiedProtocol,
   ...props
 }: Omit<ImageProps & { protocol?: ImageProtocolName }, "onSupportDetected">) {
+  const isScreenReaderEnabled = useIsScreenReaderEnabled();
   const protocol = useProtocol(specifiedProtocol);
+
+  if (isScreenReaderEnabled) {
+    const { src, alt, width, height } = props;
+    // Simulate aria-role because Ink doesn't have a image role
+    const label = `image: ${alt || src}`;
+
+    return (
+      <Box
+        width={width}
+        height={height}
+        aria-label={label}
+        flexDirection="column"
+      />
+    );
+  }
 
   return <ImageRenderer protocol={protocol} key={protocol} {...props} />;
 }
