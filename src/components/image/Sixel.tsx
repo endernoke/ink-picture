@@ -191,8 +191,8 @@ function SixelImage(props: ImageProps) {
       previousRenderBoundingBox = {
         row: stdout.rows - componentPosition.appHeight + componentPosition.row,
         col: componentPosition.col,
-        width: componentPosition.width,
-        height: componentPosition.height,
+        width: resolvedWidth,
+        height: resolvedHeight,
       };
     }, 100); // Delay to allow Ink/terminal to finish its render
 
