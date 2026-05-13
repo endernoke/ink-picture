@@ -257,7 +257,7 @@ export const TerminalInfoProvider = ({
       // The kitty docs wants us to query for kitty support before terminal attributes
       // Example response: \x1b_Gi=31;error message or OK\x1b\, or nothing
       const kittyResponse = await queryEscapeSequence(
-        "\x1b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\x1b\\ \x1b[c",
+        "\x1b_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\x1b\\\x1b[c",
         stdin,
         stdout,
         setRawMode,

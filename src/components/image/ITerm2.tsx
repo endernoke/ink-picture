@@ -11,9 +11,10 @@ import {
   useTerminalCapabilities,
   useTerminalDimensions,
 } from "../../context/TerminalInfo.js";
-// import { backgroundContext } from "ink";
+import useBackgroundColor from "../../hooks/useBackgroundColor.js";
 import usePosition from "../../hooks/usePosition.js";
 import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
+import bgColorize from "../../utils/bgColorize.js";
 import {
   calculateImageSize,
   fetchImage,
@@ -66,14 +67,12 @@ function ITerm2Image(props: ImageProps) {
   const { stdout } = useStdout();
   const containerRef = useRef<DOMElement | null>(null);
   const componentPosition = usePosition(containerRef);
+  const inheritedBackgroundColor = useBackgroundColor(containerRef);
   const terminalDimensions = useTerminalDimensions();
   const shouldCleanupRef = useRef<boolean>(true);
   const { src, width, height, alt, allowPartial } = props;
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const [measuredHeight, setMeasuredHeight] = useState(0);
-
-  // TODO: If we upgrade to Ink 6 we will need to deal with Box background colors when rendering/cleaning up
-  // const inheritedBackgroundColor = useContext(backgroundContext);
 
   const needsMeasure = typeof width === "string" || typeof height === "string";
   useEffect(() => {
@@ -194,8 +193,8 @@ function ITerm2Image(props: ImageProps) {
       previousRenderBoundingBox = {
         row: stdout.rows - componentPosition.appHeight + componentPosition.row,
         col: componentPosition.col,
-        width: resolvedWidth * terminalDimensions!.cellWidth,
-        height: resolvedHeight * terminalDimensions!.cellHeight,
+        width: width,
+        height: height,
       };
     }, 100); // Delay to allow Ink/terminal to finish its render
 
@@ -219,15 +218,17 @@ function ITerm2Image(props: ImageProps) {
       for (let i = 0; i < previousRenderBoundingBox.height; i++) {
         stdout.write("\r");
         stdout.write(cursorForward(previousRenderBoundingBox.col));
-        // if (inheritedBackgroundColor) {
-        //   const bgColor = "bg" + toProper(inheritedBackgroundColor);
-        //   stdout.write(
-        //     chalk[bgColor](" ".repeat(previousRenderBoundingBox.width) + "\n"),
-        //   );
-        // } else {
-        stdout.write(" ".repeat(previousRenderBoundingBox.width));
+        if (inheritedBackgroundColor) {
+          stdout.write(
+            bgColorize(
+              " ".repeat(previousRenderBoundingBox.width),
+              inheritedBackgroundColor,
+            ),
+          );
+        } else {
+          stdout.write(" ".repeat(previousRenderBoundingBox.width));
+        }
         stdout.write("\n");
-        // }
       }
       stdout.write("\x1b8"); // Restore cursor position
     };
