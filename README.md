@@ -58,7 +58,7 @@ Main component with automatic protocol detection and fallback.
 
 #### Props
 
-- `src` (string) - Image URL or file path. Supports all formats handled by `jimp` (JPEG, PNG, WebP, GIF, BMP, TIFF)
+- `src` (`string | Buffer | ArrayBuffer`) - Image URL, file path or pre-loaded image buffer. Supports all formats handled by `jimp` (JPEG, PNG, WebP, GIF, BMP, TIFF)
 - `width?` (number) - Width in terminal cells
 - `height?` (number) - Height in terminal cells
 - `alt?` (string) - Alternative text for loading/error states

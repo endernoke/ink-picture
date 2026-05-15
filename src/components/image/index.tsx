@@ -102,7 +102,7 @@ function Image({
   if (isScreenReaderEnabled) {
     const { src, alt, width, height } = props;
     // Simulate aria-role because Ink doesn't have a image role
-    const label = `image: ${alt || src}`;
+    const label = `image: ${alt || (typeof src === "string" ? src : "binary image data")}`;
 
     return (
       <Box

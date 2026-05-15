@@ -84,4 +84,28 @@ describe("fetchImage", () => {
       expect(image).toBeUndefined();
     });
   });
+
+  describe("binary sources", () => {
+    it("loads an image from a Buffer", async () => {
+      const buf = await readFile(sampleImagePath);
+      const image = await fetchImage(buf);
+      expect(image).toBeDefined();
+      expect(image?.bitmap.width).toBeGreaterThan(0);
+      expect(image?.bitmap.height).toBeGreaterThan(0);
+    });
+
+    it("loads an image from an ArrayBuffer", async () => {
+      const response = await fetch(`${baseUrl}/image.png`);
+      const arrayBuffer = await response.arrayBuffer();
+      const image = await fetchImage(arrayBuffer);
+      expect(image).toBeDefined();
+      expect(image?.bitmap.width).toBeGreaterThan(0);
+      expect(image?.bitmap.height).toBeGreaterThan(0);
+    });
+
+    it("returns undefined for a Buffer with invalid image data", async () => {
+      const image = await fetchImage(Buffer.from("not an image"));
+      expect(image).toBeUndefined();
+    });
+  });
 });

@@ -12,12 +12,12 @@ export interface ImageOutputInfo {
 }
 
 export async function fetchImage(
-  src: string,
+  src: Parameters<typeof Jimp.read>[0],
   // jimp doesn't support partial image loading, kept for backwards compatibility
   _allowPartial = false,
 ): Promise<JimpImage | undefined> {
   try {
-    if (src.startsWith("file://")) {
+    if (typeof src === "string" && src.startsWith("file://")) {
       return await Jimp.read(fileURLToPath(src));
     }
     return await Jimp.read(src);
