@@ -1,13 +1,19 @@
-import { render, Text } from "ink";
+import { Box, render, Text, useStdout } from "ink";
 import React from "react";
 import { TerminalInfoProvider } from "../../../src/context/TerminalInfo.js";
 
 const CtrlCTest = () => {
   setInterval(() => {}, 1000); // Keep the process alive
+
+  const stdout = useStdout();
+
   return (
-    <TerminalInfoProvider>
-      {/* Signal that the process is ready */}
-      <Text>__READY__</Text>
+    <TerminalInfoProvider
+      onDetection={(_) => {
+        stdout.write("__READY__");
+      }}
+    >
+      <Box />
     </TerminalInfoProvider>
   );
 };

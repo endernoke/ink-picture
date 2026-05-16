@@ -10,14 +10,14 @@ export function App() {
   const terminalInfo = useTerminalInfo();
   return (
     <Box flexDirection="column">
-      {terminalInfo?.supportsSixelGraphics && <Text>sixel</Text>}
-      {terminalInfo?.supportsKittyGraphics && <Text>kitty</Text>}
+      {terminalInfo?.supportsColor && <Text>color</Text>}
     </Box>
   );
 }
 
 render(
-  <TerminalInfoProvider>
+  // xterm.js supports color so overriding with false checks that the default info is properly overridden
+  <TerminalInfoProvider terminalInfo={{ supportsColor: false }}>
     <App />
   </TerminalInfoProvider>,
 );

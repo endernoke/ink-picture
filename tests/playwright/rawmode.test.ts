@@ -67,4 +67,28 @@ test.describe("TerminalInfoProvider", () => {
     // 3|+-+
     expect(bufferOutput).toMatch(/^\+-\+\s*\n\| \|\s*\n\+-\+\s*$/);
   });
+  test("allows overriding terminal info", async ({ ctx }) => {
+    const ps = await runFixture(
+      "terminal-info-override.tsx",
+      [],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput.includes("color")).toBe(false);
+  });
+  test("useTerminalInfo without provider returns default info", async ({
+    ctx,
+  }) => {
+    const ps = await runFixture(
+      "no-terminal-info-provider.tsx",
+      [],
+      ctx.terminalProxy,
+    );
+    const exitStatus = await ps.waitForExit();
+    // Expect no error even if without a provider
+    expect(exitStatus?.exitCode).toBe(0);
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput.includes("default")).toBe(true);
+  });
 });

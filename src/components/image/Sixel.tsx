@@ -8,10 +8,7 @@ import {
 } from "ink";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { image2sixel } from "sixel";
-import {
-  useTerminalCapabilities,
-  useTerminalDimensions,
-} from "../../context/TerminalInfo.js";
+import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import useBackgroundColor from "../../hooks/useBackgroundColor.js";
 import usePosition from "../../hooks/usePosition.js";
 import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
@@ -69,7 +66,7 @@ function SixelImage(props: ImageProps) {
   const containerRef = useRef<DOMElement | null>(null);
   const componentPosition = usePosition(containerRef);
   const inheritedBackgroundColor = useBackgroundColor(containerRef);
-  const terminalDimensions = useTerminalDimensions();
+  const terminalInfo = useTerminalInfo();
   const shouldCleanupRef = useRef<boolean>(true);
   const { src, width, height, alt, allowPartial } = props;
   const [measuredWidth, setMeasuredWidth] = useState(0);
@@ -101,7 +98,7 @@ function SixelImage(props: ImageProps) {
    */
   useEffect(() => {
     if (resolvedWidth === 0 || resolvedHeight === 0) return;
-    if (!terminalDimensions) return;
+    if (!terminalInfo) return;
 
     const generateImageOutput = async () => {
       const image = await fetchImage(src, allowPartial);
@@ -112,8 +109,8 @@ function SixelImage(props: ImageProps) {
       setHasError(false);
 
       image.resize({
-        w: resolvedWidth * terminalDimensions.cellWidth,
-        h: resolvedHeight * terminalDimensions.cellHeight,
+        w: resolvedWidth * terminalInfo.cellWidth,
+        h: resolvedHeight * terminalInfo.cellHeight,
       });
       const resizedImage = await getRawPixels(image);
 
@@ -121,7 +118,7 @@ function SixelImage(props: ImageProps) {
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [src, resolvedWidth, resolvedHeight, terminalDimensions, allowPartial]);
+  }, [src, resolvedWidth, resolvedHeight, terminalInfo, allowPartial]);
 
   /**
    * Critical rendering effect for Sixel image display.

@@ -4,9 +4,9 @@ import { Box, render, Text, useApp, useInput } from "ink";
 import React from "react";
 import Image from "../src/components/image/index.js";
 import {
-  type TerminalCapabilities,
+  type TerminalInfo,
   TerminalInfoProvider,
-  useTerminalCapabilities,
+  useTerminalInfo,
 } from "../src/context/TerminalInfo.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,7 +26,7 @@ type ProtocolConfig = {
   protocol: React.ComponentProps<typeof Image>["protocol"];
   description: string;
   requirements: string;
-  getSupportStatus: (caps: TerminalCapabilities) => {
+  getSupportStatus: (caps: TerminalInfo) => {
     supported: boolean;
     reason: string;
   };
@@ -103,9 +103,9 @@ const protocols: ProtocolConfig[] = [
 ];
 
 function ProtocolDemo({ config }: { config: ProtocolConfig }) {
-  const capabilities = useTerminalCapabilities();
+  const terminalInfo = useTerminalInfo();
   // biome-ignore lint/style/noNonNullAssertion: monkey patch
-  const supportInfo = config.getSupportStatus(capabilities!);
+  const supportInfo = config.getSupportStatus(terminalInfo!);
 
   return (
     <Box flexDirection="column">
