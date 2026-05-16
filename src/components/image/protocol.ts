@@ -1,3 +1,4 @@
+import type { Jimp } from "jimp";
 import type { JSX } from "react";
 /**
  * Props interface for image rendering components.
@@ -9,10 +10,10 @@ import type { JSX } from "react";
  */
 export interface ImageProps {
   /**
-   * The source URL or file path of the image to render
-   * Supports all image formats supported by jimp (JPEG, PNG, WebP, GIF, BMP, TIFF)
+   * The source URL, file path or ArrayBuffer of the image to render
+   * Supports all image formats supported by jimp (JPEG, PNG, WebP, GIF, BMP, TIFF).
    */
-  src: string;
+  src: Parameters<typeof Jimp.read>[0];
   /** Width in terminal cells or a percentage */
   width: number | string;
   /** Height in terminal cells or a percentage */
