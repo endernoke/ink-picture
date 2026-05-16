@@ -44,6 +44,7 @@ export { default as SixelImage } from "./components/image/Sixel.js";
 export type { TerminalInfo } from "./context/TerminalInfo.js";
 // Terminal info context and provider - required for Image component
 export {
+  defaultTerminalInfo,
   TerminalInfoContext,
   TerminalInfoProvider,
   useTerminalInfo,

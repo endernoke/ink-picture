@@ -1,7 +1,13 @@
 import { useStdin } from "ink";
 import checkIsUnicodeSupported from "is-unicode-supported";
 import iterm2Version from "iterm2-version";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import supportsColor from "supports-color";
 import { queryTerminal } from "../utils/queryTerminal.js";
 
@@ -148,12 +154,18 @@ export const TerminalInfoContext = createContext<TerminalInfo | undefined>(
  *
  * @param props - Component props
  * @param props.children - Child components that will have access to terminal info
+ * @param props.terminalInfo - Optional terminal info overrides
+ * @param props.onDetection - Optional callback that receives the detected terminal info once available
  * @returns JSX element providing terminal information context
  */
 export const TerminalInfoProvider = ({
   children,
+  terminalInfo: overrides,
+  onDetection,
 }: {
   children: React.ReactNode;
+  terminalInfo?: Partial<TerminalInfo>;
+  onDetection?: (terminalInfo: TerminalInfo) => void;
 }) => {
   const { stdin, setRawMode } = useStdin();
   const [terminalInfo, setTerminalInfo] = useState<TerminalInfo | undefined>(
@@ -166,7 +178,7 @@ export const TerminalInfoProvider = ({
     const queryTerminalInfo = async () => {
       const result = await queryTerminal(stdin, setRawMode, controller.signal);
 
-      const info = { ...defaultTerminalInfo };
+      const info = { ...defaultTerminalInfo, ...overrides };
 
       if (result.cellWidth && result.cellHeight) {
         info.cellWidth = result.cellWidth;
@@ -200,14 +212,20 @@ export const TerminalInfoProvider = ({
         info.terminalHeight = info.cellHeight * process.stdout.rows;
       }
       setTerminalInfo(info);
+      onDetection?.(info);
     };
     queryTerminalInfo();
 
     return () => controller.abort();
-  }, [stdin, setRawMode]);
+  }, [stdin, setRawMode, overrides, onDetection]);
+
+  const resolvedInfo = useMemo(
+    () => ({ ...defaultTerminalInfo, ...terminalInfo, ...overrides }),
+    [terminalInfo, overrides],
+  );
 
   return (
-    <TerminalInfoContext.Provider value={terminalInfo}>
+    <TerminalInfoContext.Provider value={resolvedInfo}>
       {terminalInfo ? children : null}
     </TerminalInfoContext.Provider>
   );
@@ -216,31 +234,11 @@ export const TerminalInfoProvider = ({
 /**
  * Hook to access complete terminal information.
  *
- * **Error Handling:**
- * This hook implements a 2-second timeout to detect if it's being used
- * outside of a TerminalInfoProvider. If no terminal info is available
- * after the timeout, it throws a helpful error message.
- *
  * @returns TerminalInfo object with dimensions and capabilities, or undefined during initialization
  * @throws Error if not used within TerminalInfoProvider context (after 2-second timeout)
  */
 export const useTerminalInfo = () => {
   const terminalInfo = useContext(TerminalInfoContext);
 
-  useEffect(() => {
-    if (terminalInfo) return;
-    const timeoutId = setTimeout(() => {
-      if (!terminalInfo) {
-        throw new Error(
-          "Terminal info not available. (Did you forget to wrap your component in <TerminalInfoProvider>?)\n" +
-            "Apps using the `ink-picture` Image component must be wrapped in a <TerminalInfoProvider>.\n" +
-            "See https://github.com/endernoke/ink-picture?tab=readme-ov-file#terminalinfoprovider for details.",
-        );
-      }
-    }, 2000);
-    // Clean up timeout if component unmounts or terminalInfo becomes available
-    return () => clearTimeout(timeoutId);
-  }, [terminalInfo]);
-
-  return terminalInfo;
+  return terminalInfo ?? defaultTerminalInfo;
 };
