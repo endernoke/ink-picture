@@ -1,4 +1,4 @@
-import { useTerminalCapabilities } from "../context/TerminalInfo";
+import { useTerminalInfo } from "../context/TerminalInfo";
 import { getBestProtocol } from "../utils/getBestProtocol";
 
 export default function useProtocol(
@@ -10,15 +10,15 @@ export default function useProtocol(
     | "kitty"
     | "sixel",
 ): "ascii" | "braille" | "halfBlock" | "iterm2" | "kitty" | "sixel" {
-  const terminalCapabilitiesContext = useTerminalCapabilities();
+  const terminalInfo = useTerminalInfo();
 
   if (specifiedProtocol) {
     return specifiedProtocol;
   }
 
-  if (!terminalCapabilitiesContext) {
+  if (!terminalInfo) {
     return "ascii";
   }
 
-  return getBestProtocol(terminalCapabilitiesContext);
+  return getBestProtocol(terminalInfo);
 }

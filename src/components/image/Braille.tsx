@@ -1,6 +1,5 @@
 import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
 import React, { useEffect, useRef, useState } from "react";
-import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
 import {
   calculateImageSize,
   fetchImage,

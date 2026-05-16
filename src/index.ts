@@ -41,17 +41,11 @@ export { default } from "./components/image/index.js";
 // Types and interfaces
 export type { ImageProps, ImageProtocol } from "./components/image/protocol.js";
 export { default as SixelImage } from "./components/image/Sixel.js";
-export type {
-  TerminalCapabilities,
-  TerminalDimensions,
-  TerminalInfo,
-} from "./context/TerminalInfo.js";
+export type { TerminalInfo } from "./context/TerminalInfo.js";
 // Terminal info context and provider - required for Image component
 export {
   TerminalInfoContext,
   TerminalInfoProvider,
-  useTerminalCapabilities,
-  useTerminalDimensions,
   useTerminalInfo,
 } from "./context/TerminalInfo.js";
 

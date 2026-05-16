@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
 import React, { useEffect, useRef, useState } from "react";
-import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
+import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import {
   fetchImage,
   getRawPixels,
@@ -33,7 +33,7 @@ function AsciiImage(props: ImageProps) {
   const [imageOutput, setImageOutput] = useState<string | null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
   const containerRef = useRef<DOMElement | null>(null);
-  const terminalCapabilities = useTerminalCapabilities();
+  const terminalInfo = useTerminalInfo();
   const { src, width, height, alt, allowPartial } = props;
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const [measuredHeight, setMeasuredHeight] = useState(0);
@@ -65,14 +65,17 @@ function AsciiImage(props: ImageProps) {
       image.resize({ w: resolvedWidth, h: resolvedHeight });
       const resizedImage = await getRawPixels(image);
 
-      const output = await toAscii(
-        resizedImage,
-        terminalCapabilities?.supportsColor,
-      );
+      const output = await toAscii(resizedImage, terminalInfo?.supportsColor);
       setImageOutput(output);
     };
     generateImageOutput();
-  }, [src, resolvedWidth, resolvedHeight, terminalCapabilities, allowPartial]);
+  }, [
+    src,
+    resolvedWidth,
+    resolvedHeight,
+    terminalInfo?.supportsColor,
+    allowPartial,
+  ]);
 
   return (
     <Box

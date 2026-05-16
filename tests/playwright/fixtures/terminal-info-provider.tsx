@@ -10,8 +10,8 @@ export function App() {
   const terminalInfo = useTerminalInfo();
   return (
     <Box flexDirection="column">
-      {terminalInfo?.capabilities.supportsSixelGraphics && <Text>sixel</Text>}
-      {terminalInfo?.capabilities.supportsKittyGraphics && <Text>kitty</Text>}
+      {terminalInfo?.supportsSixelGraphics && <Text>sixel</Text>}
+      {terminalInfo?.supportsKittyGraphics && <Text>kitty</Text>}
     </Box>
   );
 }

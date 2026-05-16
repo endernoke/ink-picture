@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from "react";
-import { useTerminalCapabilities } from "../../context/TerminalInfo.js";
 import useProtocol from "../../hooks/useProtocol.js";
 import { getBestProtocol } from "../../utils/getBestProtocol.js";
 import AsciiImage from "./Ascii.js";

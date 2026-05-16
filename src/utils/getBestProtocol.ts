@@ -1,8 +1,8 @@
-import type { TerminalCapabilities } from "../context/TerminalInfo.js";
+import type { TerminalInfo } from "../context/TerminalInfo.js";
 
 // Heuristic for selecting the best image protocol based on terminal capabilities
 function getBestProtocol(
-  caps: TerminalCapabilities,
+  caps: TerminalInfo,
 ): "sixel" | "kitty" | "iterm2" | "braille" | "halfBlock" | "ascii" {
   if (process.env.TERM_PROGRAM === "iTerm.app" && caps.supportsITerm2Graphics) {
     // Testing has shown that iTerm2 might be adding kitty support in stealth but it's not mature yet

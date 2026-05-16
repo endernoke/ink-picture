@@ -7,10 +7,7 @@ import {
   useStdout,
 } from "ink";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-  useTerminalCapabilities,
-  useTerminalDimensions,
-} from "../../context/TerminalInfo.js";
+import { useTerminalInfo } from "../../context/TerminalInfo.js";
 // import { backgroundContext } from "ink";
 import usePosition from "../../hooks/usePosition.js";
 import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
@@ -63,7 +60,7 @@ function KittyImage(props: ImageProps) {
   const { stdout } = useStdout();
   const containerRef = useRef<DOMElement | null>(null);
   const componentPosition = usePosition(containerRef);
-  const terminalDimensions = useTerminalDimensions();
+  const terminalInfo = useTerminalInfo();
   const shouldCleanupRef = useRef<boolean>(true);
   const { src, width, height, alt, allowPartial } = props;
   const [measuredWidth, setMeasuredWidth] = useState(0);
@@ -96,7 +93,7 @@ function KittyImage(props: ImageProps) {
    */
   useEffect(() => {
     if (resolvedWidth === 0 || resolvedHeight === 0) return;
-    if (!terminalDimensions) return;
+    if (!terminalInfo) return;
 
     const generateImageOutput = async () => {
       const image = await fetchImage(src, allowPartial);
@@ -107,8 +104,8 @@ function KittyImage(props: ImageProps) {
       setHasError(false);
 
       image.resize({
-        w: resolvedWidth * terminalDimensions.cellWidth,
-        h: resolvedHeight * terminalDimensions.cellHeight,
+        w: resolvedWidth * terminalInfo.cellWidth,
+        h: resolvedHeight * terminalInfo.cellHeight,
       });
 
       try {
@@ -148,7 +145,7 @@ function KittyImage(props: ImageProps) {
     src,
     resolvedWidth,
     resolvedHeight,
-    terminalDimensions,
+    terminalInfo,
     allowPartial,
     stdout.write,
   ]);
