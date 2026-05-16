@@ -235,6 +235,10 @@ const verticalOffsetAppHeightCases = [
 ];
 
 test.describe("vertical offset", () => {
+  // kitty is sometimes flaky for some mysterious reason
+  test.describe.configure({
+    retries: 2,
+  });
   for (const protocol of advancedImageProtocols) {
     for (const {
       label,

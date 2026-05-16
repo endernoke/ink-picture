@@ -181,6 +181,12 @@ function KittyImage(props: ImageProps) {
   useEffect(() => {
     if (!imageId) return;
     if (!componentPosition) return;
+    if (
+      stdout.rows - componentPosition.appHeight + componentPosition.row < 0 ||
+      componentPosition.col > stdout.columns
+    ) {
+      return;
+    }
 
     // NOTE: technically we don't need to save/restore cursor position
     // assuming that the terminal implements the kitty protocol correctly
