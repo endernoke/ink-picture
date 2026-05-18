@@ -10,13 +10,13 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import useBackgroundColor from "../../hooks/useBackgroundColor.js";
 import usePosition from "../../hooks/usePosition.js";
+import { renderITerm2 } from "../../renderers/iterm2.js";
 import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
 import bgColorize from "../../utils/bgColorize.js";
 import {
   calculateImageSize,
   fetchImage,
   getPngBuffer,
-  type ImageOutputInfo,
 } from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
@@ -113,7 +113,7 @@ function ITerm2Image(props: ImageProps) {
       });
       const resizedImage = await getPngBuffer(image);
 
-      const output = toITerm2(resizedImage, {
+      const output = renderITerm2(resizedImage, {
         width: resolvedWidth * terminalInfo.cellWidth,
         height: resolvedHeight * terminalInfo.cellHeight,
       });
@@ -259,37 +259,6 @@ function ITerm2Image(props: ImageProps) {
       )}
     </Box>
   );
-}
-
-/**
- * Converts processed image data to ITerm2 format.
- *
- * This function takes raw RGBA image data from Jimp and converts it to
- * the ITerm2 graphics format using the node-iTerm2 library. The resulting
- * string contains escape sequences that can be written directly to a
- * terminal that supports ITerm2 graphics.
- *
- * @note We do not use auto width and height because we might adjust it based on scale factor
- *
- * @param imageData - Raw image data with buffer and metadata from Jimp
- * @returns ITerm2-formatted string
- */
-function toITerm2(
-  imageData: { data: Buffer; info: ImageOutputInfo },
-  options: { width: number; height: number },
-) {
-  const { data, info } = imageData;
-  const { width, height } = options;
-
-  const iTerm2Data =
-    "\x1b]1337;File=" +
-    `size=${info.size};` +
-    `width=${width}px;height=${height}px;` +
-    `preserveAspectRatio=1;` +
-    `inline=1:` +
-    data.toString("base64") +
-    "\x07";
-  return iTerm2Data;
 }
 
 export default ITerm2Image;

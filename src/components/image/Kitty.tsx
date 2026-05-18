@@ -8,8 +8,12 @@ import {
 } from "ink";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTerminalInfo } from "../../context/TerminalInfo.js";
-// import { backgroundContext } from "ink";
 import usePosition from "../../hooks/usePosition.js";
+import {
+  makeKittyDeletion,
+  makeKittyPlacement,
+  makeKittyTransmitChunks,
+} from "../../renderers/kitty.js";
 import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
 import generateKittyId from "../../utils/generateKittyId.js";
 import { calculateImageSize, fetchImage } from "../../utils/image.js";
@@ -112,26 +116,12 @@ function KittyImage(props: ImageProps) {
         const imageId = generateKittyId();
 
         const data = await image.getBuffer("image/png");
-        const chunkSize = 4096; // Kitty protocol pixel data max chunk size
         const base64Data = data.toString("base64");
 
-        const firstChunk = base64Data.slice(0, chunkSize);
-        // f=100: transmit png data; t=d: direct transfer; i=image-id;
-        // m=1: more chunks follow; q=2: suppress terminal response
-        stdout.write(
-          `\x1b_Gf=100,t=d,i=${imageId},m=1,q=2;${firstChunk}\x1b\\`,
-        );
-        let bufferOffset = chunkSize;
-        while (bufferOffset < base64Data.length - chunkSize) {
-          const chunk = base64Data.slice(
-            bufferOffset,
-            bufferOffset + chunkSize,
-          );
-          bufferOffset += chunkSize;
-          stdout.write(`\x1b_Gm=1,q=2;${chunk}\x1b\\`);
+        const chunks = makeKittyTransmitChunks(imageId, base64Data);
+        for (const chunk of chunks) {
+          stdout.write(chunk);
         }
-        const lastChunk = base64Data.slice(bufferOffset);
-        stdout.write(`\x1b_Gm=0,q=2;${lastChunk}\x1b\\`);
 
         // Set image ID only after all data are sent
         setImageId(imageId);
@@ -201,10 +191,8 @@ function KittyImage(props: ImageProps) {
     stdout.write("\r");
     stdout.write(cursorForward(componentPosition.col));
 
-    const placementId = 1; // We only have one image per component instance
-    // a=p: place image; i=image-id; p=placement-id; C=1: do not move cursor;
-    // q=2: supress terminal response (don't write to stdin)
-    stdout.write(`\x1b_Ga=p,i=${imageId},p=${placementId},C=1,q=2\x1b\\`);
+    const placementId = 1;
+    stdout.write(makeKittyPlacement(imageId, placementId));
 
     stdout.write("\x1b8"); // Restore cursor position
 
@@ -226,8 +214,7 @@ function KittyImage(props: ImageProps) {
       if (!shouldCleanupRef.current) return;
       if (!imageId) return;
 
-      // a=d: delete image; d=I: remove image data from storage; i=image-id
-      stdout.write(`\x1b_Ga=d,d=I,i=${imageId}\x1b\\`);
+      stdout.write(makeKittyDeletion(imageId));
     };
   }, [imageId, stdout, onExit, onSigInt]);
 

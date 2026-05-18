@@ -7,17 +7,16 @@ import {
   useStdout,
 } from "ink";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { image2sixel } from "sixel";
 import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import useBackgroundColor from "../../hooks/useBackgroundColor.js";
 import usePosition from "../../hooks/usePosition.js";
+import { renderSixel } from "../../renderers/sixel.js";
 import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
 import bgColorize from "../../utils/bgColorize.js";
 import {
   calculateImageSize,
   fetchImage,
   getRawPixels,
-  type ImageOutputInfo,
 } from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
@@ -114,7 +113,7 @@ function SixelImage(props: ImageProps) {
       });
       const resizedImage = await getRawPixels(image);
 
-      const output = await toSixel(resizedImage);
+      const output = renderSixel(resizedImage);
       setImageOutput(output);
     };
     generateImageOutput();
@@ -257,26 +256,6 @@ function SixelImage(props: ImageProps) {
       )}
     </Box>
   );
-}
-
-/**
- * Converts processed image data to Sixel format.
- *
- * This function takes raw RGBA image data from Jimp and converts it to
- * the Sixel graphics format using the node-sixel library. The resulting
- * string contains escape sequences that can be written directly to a
- * terminal that supports Sixel graphics.
- *
- * @param imageData - Raw image data with buffer and metadata from Jimp
- * @returns Promise resolving to Sixel-formatted string
- */
-async function toSixel(imageData: { data: Buffer; info: ImageOutputInfo }) {
-  const { data, info } = imageData;
-  const { width, height } = info;
-  const u8Data = new Uint8Array(data);
-
-  const sixelData = image2sixel(u8Data, width, height);
-  return sixelData;
 }
 
 export default SixelImage;

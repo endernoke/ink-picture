@@ -1,12 +1,8 @@
-import chalk from "chalk";
 import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
 import React, { useEffect, useRef, useState } from "react";
 import { useTerminalInfo } from "../../context/TerminalInfo.js";
-import {
-  fetchImage,
-  getRawPixels,
-  type ImageOutputInfo,
-} from "../../utils/image.js";
+import { renderAscii } from "../../renderers/ascii.js";
+import { fetchImage, getRawPixels } from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
 /**
@@ -65,7 +61,9 @@ function AsciiImage(props: ImageProps) {
       image.resize({ w: resolvedWidth, h: resolvedHeight });
       const resizedImage = await getRawPixels(image);
 
-      const output = await toAscii(resizedImage, terminalInfo?.supportsColor);
+      const output = renderAscii(resizedImage, {
+        colored: terminalInfo?.supportsColor,
+      });
       setImageOutput(output);
     };
     generateImageOutput();
@@ -105,48 +103,6 @@ function AsciiImage(props: ImageProps) {
       )}
     </Box>
   );
-}
-
-async function toAscii(
-  imageData: {
-    data: Buffer;
-    info: ImageOutputInfo;
-  },
-  colored: boolean = true,
-) {
-  const { data, info } = imageData;
-  const { width, height, channels } = info;
-
-  // ascii characters ordered by brightness
-  const ascii_chars =
-    "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
-
-  let result = "";
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const pixelIndex = (y * width + x) * channels;
-
-      const r = data[pixelIndex] as number;
-      const g = data[pixelIndex + 1] as number;
-      const b = data[pixelIndex + 2] as number;
-      const a = channels === 4 ? (data[pixelIndex + 3] as number) : 255;
-
-      // this is different from perceived luminance
-      const intensity = r + g + b + a === 0 ? 0 : (r + g + b + a) / (255 * 4);
-      const pixel_char =
-        ascii_chars[
-          ascii_chars.length -
-            1 -
-            Math.floor(intensity * (ascii_chars.length - 1))
-        ];
-
-      result += colored ? chalk.rgb(r, g, b)(pixel_char) : pixel_char;
-    }
-
-    result += "\n";
-  }
-
-  return result;
 }
 
 export default AsciiImage;
