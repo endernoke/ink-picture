@@ -1,4 +1,4 @@
-import { Box, Newline, Text, useStdout } from "ink";
+import { useStdout } from "ink";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import { useImage } from "../../hooks/useImage.js";
@@ -11,12 +11,13 @@ import {
 } from "../../renderers/kitty.js";
 import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
 import generateKittyId from "../../utils/generateKittyId.js";
+import ImageBox from "../ImageBox.js";
 import type { ImageProps } from "./protocol.js";
 
 function KittyImage(props: ImageProps) {
   const terminalInfo = useTerminalInfo();
   const { stdout } = useStdout();
-  const { src, width, height, alt, allowPartial } = props;
+  const { src, width, height, alt } = props;
 
   const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
     width,
@@ -101,31 +102,14 @@ function KittyImage(props: ImageProps) {
   }, [imageId, onExit, onSigInt, stdout.write]);
 
   return (
-    <Box
+    <ImageBox
       ref={containerRef}
-      flexDirection="column"
       width={width}
       height={height}
-    >
-      {imageId ? (
-        <Text color="gray" wrap="wrap">
-          {alt ?? "Loading..."}
-        </Text>
-      ) : (
-        <Box flexDirection="column" alignItems="center" justifyContent="center">
-          {alt ? (
-            <Text color="gray">{alt}</Text>
-          ) : error ? (
-            <Text color="red">
-              X<Newline />
-              Load failed
-            </Text>
-          ) : (
-            <Text color="gray">{props.alt || "Loading..."}</Text>
-          )}
-        </Box>
-      )}
-    </Box>
+      alt={alt}
+      error={error}
+      loaded={!!imageId}
+    />
   );
 }
 

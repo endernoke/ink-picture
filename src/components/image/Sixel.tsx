@@ -1,4 +1,4 @@
-import { Box, Newline, Text, useStdout } from "ink";
+import { useStdout } from "ink";
 import React, { useMemo } from "react";
 import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import useBackgroundColor from "../../hooks/useBackgroundColor.js";
@@ -7,12 +7,13 @@ import { useImage } from "../../hooks/useImage.js";
 import { useMeasuredSize } from "../../hooks/useMeasuredSize.js";
 import usePosition from "../../hooks/usePosition.js";
 import { renderSixel } from "../../renderers/sixel.js";
+import ImageBox from "../ImageBox.js";
 import type { ImageProps } from "./protocol.js";
 
 function SixelImage(props: ImageProps) {
   const terminalInfo = useTerminalInfo();
   const { stdout } = useStdout();
-  const { src, width, height, alt, allowPartial } = props;
+  const { src, width, height, alt } = props;
 
   const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
     width,
@@ -48,31 +49,14 @@ function SixelImage(props: ImageProps) {
   });
 
   return (
-    <Box
+    <ImageBox
       ref={containerRef}
-      flexDirection="column"
       width={width}
       height={height}
-    >
-      {imageOutput ? (
-        <Text color="gray" wrap="wrap">
-          {alt ?? "Loading..."}
-        </Text>
-      ) : (
-        <Box flexDirection="column" alignItems="center" justifyContent="center">
-          {alt ? (
-            <Text color="gray">{alt}</Text>
-          ) : error ? (
-            <Text color="red">
-              X<Newline />
-              Load failed
-            </Text>
-          ) : (
-            <Text color="gray">Loading...</Text>
-          )}
-        </Box>
-      )}
-    </Box>
+      alt={alt}
+      error={error}
+      loaded={!!imageOutput}
+    />
   );
 }
 
