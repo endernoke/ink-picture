@@ -1,11 +1,7 @@
-import chalk from "chalk";
 import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
 import React, { useEffect, useRef, useState } from "react";
-import {
-  fetchImage,
-  getRawPixels,
-  type ImageOutputInfo,
-} from "../../utils/image.js";
+import { renderHalfBlock } from "../../renderers/halfBlock.js";
+import { fetchImage, getRawPixels } from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
 /**
@@ -66,7 +62,7 @@ function HalfBlockImage(props: ImageProps) {
       image.resize({ w: resolvedWidth, h: resolvedHeight * 2 });
       const resizedImage = await getRawPixels(image);
 
-      const output = await toHalfBlocks(resizedImage);
+      const output = renderHalfBlock(resizedImage);
       setImageOutput(output);
     };
     generateImageOutput();
@@ -100,62 +96,6 @@ function HalfBlockImage(props: ImageProps) {
       )}
     </Box>
   );
-}
-
-/** Unicode half-block character (▄) used for rendering */
-const HALF_BLOCK = "\u2584";
-
-/**
- * Converts image data to half-block representation.
- *
- * This function processes the image by:
- * 1. Iterating through pixels in pairs (top and bottom)
- * 2. Using the top pixel color as background
- * 3. Using the bottom pixel color as foreground
- * 4. Rendering a half-block character with these colors
- * 5. Handling transparency by using spaces for transparent pixels
- *
- * The half-block character (▄) fills the bottom half of the character cell,
- * so the background color shows through the top half, effectively displaying
- * two pixels per character position.
- *
- * Adapted from https://github.com/sindresorhus/terminal-image
- *
- * @param imageData - Raw image data from Jimp with buffer and metadata
- * @returns Promise resolving to formatted string with colored half-block characters
- */
-async function toHalfBlocks(imageData: {
-  data: Buffer;
-  info: ImageOutputInfo;
-}) {
-  const { data, info } = imageData;
-  const { width, height, channels } = info;
-
-  let result = "";
-  for (let y = 0; y < height - 1; y += 2) {
-    for (let x = 0; x < width; x++) {
-      const topPixelIndex = (y * width + x) * channels;
-      const bottomPixelIndex = ((y + 1) * width + x) * channels;
-
-      const r = data[topPixelIndex] as number;
-      const g = data[topPixelIndex + 1] as number;
-      const b = data[topPixelIndex + 2] as number;
-      const a = channels === 4 ? (data[topPixelIndex + 3] as number) : 255;
-
-      const r2 = data[bottomPixelIndex] as number;
-      const g2 = data[bottomPixelIndex + 1] as number;
-      const b2 = data[bottomPixelIndex + 2] as number;
-
-      result +=
-        a === 0
-          ? chalk.reset(" ")
-          : chalk.bgRgb(r, g, b).rgb(r2, g2, b2)(HALF_BLOCK);
-    }
-
-    result += "\n";
-  }
-
-  return result;
 }
 
 export default HalfBlockImage;

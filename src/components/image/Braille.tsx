@@ -1,10 +1,10 @@
 import { Box, type DOMElement, measureElement, Newline, Text } from "ink";
 import React, { useEffect, useRef, useState } from "react";
+import { renderBraille } from "../../renderers/braille.js";
 import {
   calculateImageSize,
   fetchImage,
   getRawPixels,
-  type ImageOutputInfo,
 } from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
@@ -74,7 +74,7 @@ function BrailleImage(props: ImageProps) {
       image.resize({ w: resolvedWidth * 2, h: resolvedHeight * 4 });
       const resizedImage = await getRawPixels(image);
 
-      const output = await toBraille(resizedImage);
+      const output = renderBraille(resizedImage);
       setImageOutput(output);
     };
     generateImageOutput();
@@ -108,132 +108,6 @@ function BrailleImage(props: ImageProps) {
       )}
     </Box>
   );
-}
-
-/**
- * Converts image data to Braille pattern representation.
- *
- * This function processes the image by:
- * 1. Grouping pixels into 2x4 grids (8 pixels per Braille character)
- * 2. Converting each pixel to black or white based on luminance threshold
- * 3. Mapping the 8 pixels to corresponding Braille dot positions
- * 4. Constructing Unicode Braille characters using bit manipulation
- *
- * How Braille patterns work:
- * - Each character represents 8 dots in a 2x4 arrangement
- * - Dot positions are numbered 1-8 as shown in the component description
- * - A raised dot (1) represents a white/bright pixel
- * - A flat dot (0) represents a black/dark pixel
- * - Unicode range U+2800-U+28FF covers all 256 possible combinations
- *
- * Reference: https://en.wikipedia.org/wiki/Braille_Patterns#Identifying,_naming_and_ordering
- *
- * @param imageData - Raw image data from Jimp with buffer and metadata
- * @returns Promise resolving to string of Braille Unicode characters
- */
-async function toBraille(imageData: { data: Buffer; info: ImageOutputInfo }) {
-  const { data, info } = imageData;
-  const { width, height, channels } = info;
-
-  let result = "";
-  for (let y = 0; y < height - 3; y += 4) {
-    for (let x = 0; x < width - 1; x += 2) {
-      const dot1Index = (y * width + x) * channels;
-      const dot2Index = ((y + 1) * width + x) * channels;
-      const dot3Index = ((y + 2) * width + x) * channels;
-      const dot4Index = (y * width + x + 1) * channels;
-      const dot5Index = ((y + 1) * width + x + 1) * channels;
-      const dot6Index = ((y + 2) * width + x + 1) * channels;
-      const dot7Index = ((y + 3) * width + x) * channels;
-      const dot8Index = ((y + 3) * width + x + 1) * channels;
-
-      const getRgba = (index: number) => {
-        const r = data[index] as number;
-        const g = data[index + 1] as number;
-        const b = data[index + 2] as number;
-        const a = channels === 4 ? (data[index + 3] as number) : 1;
-        return { r, g, b, a };
-      };
-
-      const dot1 = rgbaToBlackOrWhite(getRgba(dot1Index));
-      const dot2 = rgbaToBlackOrWhite(getRgba(dot2Index));
-      const dot3 = rgbaToBlackOrWhite(getRgba(dot3Index));
-      const dot4 = rgbaToBlackOrWhite(getRgba(dot4Index));
-      const dot5 = rgbaToBlackOrWhite(getRgba(dot5Index));
-      const dot6 = rgbaToBlackOrWhite(getRgba(dot6Index));
-      const dot7 = rgbaToBlackOrWhite(getRgba(dot7Index));
-      const dot8 = rgbaToBlackOrWhite(getRgba(dot8Index));
-
-      const brailleChar = String.fromCharCode(
-        0x2800 +
-          (dot8 << 7) +
-          (dot7 << 6) +
-          (dot6 << 5) +
-          (dot5 << 4) +
-          (dot4 << 3) +
-          (dot3 << 2) +
-          (dot2 << 1) +
-          dot1,
-      );
-      result += brailleChar;
-    }
-    result += "\n";
-  }
-
-  return result;
-}
-
-/**
- * Converts RGBA pixel values to binary (black or white) representation.
- *
- * This function:
- * 1. Calculates perceived luminance using the relative luminance formula
- * 2. Adjusts for alpha transparency (transparent pixels become lighter)
- * 3. Applies a threshold to determine if the pixel should be represented as a raised Braille dot
- *
- * The luminance formula uses coefficients based on human eye sensitivity:
- * - Red: 21.26% (0.2126)
- * - Green: 71.52% (0.7152) - eyes are most sensitive to green
- * - Blue: 7.22% (0.0722)
- *
- * Alpha handling makes transparent pixels appear closer to white, which is
- * appropriate for typical terminal backgrounds.
- *
- * @param rgba - RGBA color values (0-255 range)
- * @returns 1 for white/light pixels (raised dot), 0 for black/dark pixels (flat dot)
- */
-function rgbaToBlackOrWhite({
-  r,
-  g,
-  b,
-  a,
-}: {
-  r: number;
-  g: number;
-  b: number;
-  a: number;
-}) {
-  // 1. Extract the RGBA components from the input string.
-  const red = r;
-  const green = g;
-  const blue = b;
-  // Jimp bitmap data stores alpha as 0-255, normalize to 0-1
-  const alpha = a / 255;
-
-  // 2. Calculate the perceived luminance using the formula for relative luminance (Y).
-  //    This formula is based on the sRGB color space and takes into account the human eye's sensitivity to different colors.
-  const luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
-
-  // 3. Apply the alpha value to the luminance.  This makes transparent colors closer to white.
-  const alphaAdjustedLuminance = luminance * alpha + 255 * (1 - alpha);
-
-  // 4. Determine whether to return "black" or "white" based on the luminance.
-  //    A threshold of 128 is commonly used to differentiate between dark and light colors.
-  if (alphaAdjustedLuminance > 128) {
-    return 1;
-  } else {
-    return 0;
-  }
 }
 
 export default BrailleImage;
