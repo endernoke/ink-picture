@@ -1,235 +1,50 @@
-import {
-  Box,
-  type DOMElement,
-  measureElement,
-  Newline,
-  Text,
-  useStdout,
-} from "ink";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Box, Newline, Text, useStdout } from "ink";
+import React, { useMemo } from "react";
 import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import useBackgroundColor from "../../hooks/useBackgroundColor.js";
+import { useDirectRenderer } from "../../hooks/useDirectRenderer.js";
+import { useImage } from "../../hooks/useImage.js";
+import { useMeasuredSize } from "../../hooks/useMeasuredSize.js";
 import usePosition from "../../hooks/usePosition.js";
 import { renderITerm2 } from "../../renderers/iterm2.js";
-import { cursorForward, cursorUp } from "../../utils/ansiEscapes.js";
-import bgColorize from "../../utils/bgColorize.js";
-import {
-  calculateImageSize,
-  fetchImage,
-  getPngBuffer,
-} from "../../utils/image.js";
 import type { ImageProps } from "./protocol.js";
 
-/**
- * ITerm2 Image Rendering Component
- *
- * Displays images using the ITerm2 graphics protocol, providing the highest quality
- * image rendering in supported terminals. ITerm2 is a bitmap graphics format that
- * can display true color images at full resolution.
- *
- * Features:
- * - Highest quality image rendering (true color, full resolution)
- * - Supports all image formats
- * - Requires specific terminal support (VT340+, xterm, iTerm2, etc.)
- * - Direct pixel-to-pixel rendering
- *
- * Technical Details:
- * - Uses the ITerm2 graphics protocol
- * - Renders directly to terminal using escape sequences
- * - Bypasses Ink's normal rendering pipeline for control over image position
- * - Requires careful cursor management and cleanup
- *
- * **EXPERIMENTAL COMPONENT WARNING:**
- * This component does not follow React/Ink's normal rendering lifecycle.
- * It implements custom rendering logic that writes directly to the terminal.
- * While designed to be as React-compatible as possible, you may experience:
- * - Rendering flicker
- * - Cursor positioning issues
- * - Cleanup problems on component unmount
- *
- * How it works:
- * 1. A Box component reserves space in the layout
- * 2. Image is fetched and converted to ITerm2 format
- * 3. useEffect hook renders image directly to terminal after each Ink render
- * 4. Previous image is cleared before rendering new content
- * 5. Cleanup occurs on component unmount or re-render
- * 6. Cleanup will not be performed when application terminates (so the rendered image is preserved in its location)
- *
- * @param props - Image rendering properties
- * @returns JSX element that manages ITerm2 image display
- */
 function ITerm2Image(props: ImageProps) {
-  const [imageOutput, setImageOutput] = useState<string | undefined>(undefined);
-  const [hasError, setHasError] = useState<boolean>(false);
+  const terminalInfo = useTerminalInfo();
   const { stdout } = useStdout();
-  const containerRef = useRef<DOMElement | null>(null);
+  const { src, width, height, alt, allowPartial } = props;
+
+  const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
+    width,
+    height,
+  );
+
   const componentPosition = usePosition(containerRef);
   const inheritedBackgroundColor = useBackgroundColor(containerRef);
-  const terminalInfo = useTerminalInfo();
-  const shouldCleanupRef = useRef<boolean>(true);
-  const { src, width, height, alt, allowPartial } = props;
-  const [measuredWidth, setMeasuredWidth] = useState(0);
-  const [measuredHeight, setMeasuredHeight] = useState(0);
 
-  const needsMeasure = typeof width === "string" || typeof height === "string";
-  useEffect(() => {
-    if (!needsMeasure) return;
-    if (!containerRef.current) return;
+  const pixelWidth = resolvedWidth * (terminalInfo?.cellWidth ?? 0);
+  const pixelHeight = resolvedHeight * (terminalInfo?.cellHeight ?? 0);
 
-    const { width: w, height: h } = measureElement(containerRef.current);
-    if (w > 0) setMeasuredWidth(w);
-    if (h > 0) setMeasuredHeight(h);
+  const { imageData, error } = useImage({
+    src,
+    pixelWidth,
+    pixelHeight,
+    mode: "png",
   });
 
-  const resolvedWidth = typeof width === "number" ? width : measuredWidth;
-  const resolvedHeight = typeof height === "number" ? height : measuredHeight;
+  const imageOutput = useMemo(() => {
+    if (!imageData) return undefined;
+    return renderITerm2(imageData, { width: pixelWidth, height: pixelHeight });
+  }, [imageData, pixelWidth, pixelHeight]);
 
-  /**
-   * Main effect for image processing and ITerm2 conversion.
-   *
-   * This effect:
-   * 1. Fetches and processes the source image
-   * 2. Calculates appropriate sizing based on terminal dimensions
-   * 3. Resizes image to fit within the component's allocated space
-   * 4. Ensures alpha channel is present (required by node-iTerm2)
-   * 5. Converts processed image data to ITerm2 format
-   * 6. Tracks actual size in terminal cells for cleanup purposes
-   */
-  useEffect(() => {
-    if (resolvedWidth === 0 || resolvedHeight === 0) return;
-    if (!terminalInfo) return;
-
-    const generateImageOutput = async () => {
-      const image = await fetchImage(src, allowPartial);
-      if (!image) {
-        setHasError(true);
-        return;
-      }
-      setHasError(false);
-
-      image.resize({
-        w: resolvedWidth * terminalInfo.cellWidth,
-        h: resolvedHeight * terminalInfo.cellHeight,
-      });
-      const resizedImage = await getPngBuffer(image);
-
-      const output = renderITerm2(resizedImage, {
-        width: resolvedWidth * terminalInfo.cellWidth,
-        height: resolvedHeight * terminalInfo.cellHeight,
-      });
-      setImageOutput(output);
-    };
-    generateImageOutput();
-  }, [src, resolvedWidth, resolvedHeight, terminalInfo, allowPartial]);
-
-  /**
-   * Critical rendering effect for ITerm2 image display.
-   *
-   * This effect runs after every re-render to display the ITerm2 image because
-   * Ink overwrites the terminal content with each render cycle. This is a
-   * necessary workaround for the current Ink architecture.
-   *
-   * Process:
-   * 1. Validates that image and position data are available
-   * 2. Checks if the image would be visible within terminal bounds
-   * 3. Sets up process exit handlers for cleanup
-   * 4. Positions cursor to the correct location
-   * 5. Writes ITerm2 data directly to stdout
-   * 6. Restores cursor position
-   * 7. Returns cleanup function for previous render cleanup
-   *
-   * Cursor Management:
-   * - Moves cursor up to component position
-   * - Moves cursor right to correct column
-   * - Writes image data
-   * - Moves cursor back down to original position
-   *
-   * Cleanup Strategy:
-   * - Tracks previous render bounding box
-   * - Clears previous image by writing spaces
-   * - Handles process exit gracefully
-   *
-   * TODO: This may change when Ink implements incremental rendering
-   */
-  useLayoutEffect(() => {
-    if (!imageOutput) return;
-    if (!componentPosition) return;
-    if (
-      stdout.rows - componentPosition.appHeight + componentPosition.row < 0 ||
-      componentPosition.col > stdout.columns
-    )
-      return;
-
-    function onExit() {
-      shouldCleanupRef.current = false;
-    }
-    function onSigInt() {
-      shouldCleanupRef.current = false;
-      process.exit();
-    }
-    process.on("exit", onExit);
-    process.on("SIGINT", onSigInt);
-    process.on("SIGTERM", onSigInt);
-
-    let previousRenderBoundingBox:
-      | { row: number; col: number; width: number; height: number }
-      | undefined;
-    const renderTimeout = setTimeout(() => {
-      stdout.write("\x1b7"); // Save cursor position
-      stdout.write(
-        cursorUp(componentPosition.appHeight - componentPosition.row, {
-          appHeight: componentPosition.appHeight,
-          terminalHeight: stdout.rows,
-        }),
-      );
-      stdout.write("\r");
-      stdout.write(cursorForward(componentPosition.col));
-      stdout.write(imageOutput);
-      stdout.write("\x1b8"); // Restore cursor position
-
-      previousRenderBoundingBox = {
-        row: stdout.rows - componentPosition.appHeight + componentPosition.row,
-        col: componentPosition.col,
-        width: resolvedWidth,
-        height: resolvedHeight,
-      };
-    }, 100); // Delay to allow Ink/terminal to finish its render
-
-    return () => {
-      process.removeListener("exit", onExit);
-      process.removeListener("SIGINT", onSigInt);
-      process.removeListener("SIGTERM", onSigInt);
-
-      if (!shouldCleanupRef.current) return;
-      clearTimeout(renderTimeout);
-      // If we never rendered the image, nothing to clean up
-      if (!previousRenderBoundingBox) return;
-
-      stdout.write("\x1b7"); // Save cursor position
-      stdout.write(
-        cursorUp(componentPosition.appHeight - componentPosition.row, {
-          appHeight: componentPosition.appHeight,
-          terminalHeight: stdout.rows,
-        }),
-      );
-      for (let i = 0; i < previousRenderBoundingBox.height; i++) {
-        stdout.write("\r");
-        stdout.write(cursorForward(previousRenderBoundingBox.col));
-        if (inheritedBackgroundColor) {
-          stdout.write(
-            bgColorize(
-              " ".repeat(previousRenderBoundingBox.width),
-              inheritedBackgroundColor,
-            ),
-          );
-        } else {
-          stdout.write(" ".repeat(previousRenderBoundingBox.width));
-        }
-        stdout.write("\n");
-      }
-      stdout.write("\x1b8"); // Restore cursor position
-    };
-    // }, [imageOutput, ...Object.values(componentPosition)]);
+  useDirectRenderer({
+    enabled: !!imageOutput && !!componentPosition,
+    imageOutput: imageOutput ?? "",
+    position: componentPosition,
+    stdout,
+    width: resolvedWidth,
+    height: resolvedHeight,
+    backgroundColor: inheritedBackgroundColor,
   });
 
   return (
@@ -247,7 +62,7 @@ function ITerm2Image(props: ImageProps) {
         <Box flexDirection="column" alignItems="center" justifyContent="center">
           {alt ? (
             <Text color="gray">{alt}</Text>
-          ) : hasError ? (
+          ) : error ? (
             <Text color="red">
               X<Newline />
               Load failed
