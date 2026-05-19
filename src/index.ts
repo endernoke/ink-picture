@@ -52,5 +52,11 @@ export {
 
 // Utility hooks
 export { default as usePosition } from "./hooks/usePosition.js";
+export type {
+  GetVisibility,
+  Visibility,
+  VisibilityInfo,
+} from "./hooks/useVisibility.js";
+export { useVisibility } from "./hooks/useVisibility.js";
 
 // Note: utils are kept internal for now, but can be exported later if needed

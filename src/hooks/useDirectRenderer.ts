@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import { cursorForward, cursorUp } from "../utils/ansiEscapes.js";
 import bgColorize from "../utils/bgColorize.js";
 import type { Position } from "./usePosition.js";
+import { defaultVisibility } from "./useVisibility.js";
 
 interface DirectRendererOptions {
   enabled: boolean;
@@ -34,10 +35,7 @@ export function useDirectRenderer(options: DirectRendererOptions) {
   useLayoutEffect(() => {
     if (!enabled) return;
     if (!position) return;
-    if (
-      stdout.rows - position.appHeight + position.row < 0 ||
-      position.col > stdout.columns
-    )
+    if (defaultVisibility(position, stdout.rows, stdout.columns) !== "full")
       return;
 
     shouldCleanupRef.current = true;

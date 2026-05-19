@@ -4,6 +4,7 @@ import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import { useImage } from "../../hooks/useImage.js";
 import { useMeasuredSize } from "../../hooks/useMeasuredSize.js";
 import usePosition from "../../hooks/usePosition.js";
+import { defaultVisibility } from "../../hooks/useVisibility.js";
 import {
   makeKittyDeletion,
   makeKittyPlacement,
@@ -55,8 +56,8 @@ function KittyImage(props: ImageProps) {
     if (!imageId) return;
     if (!componentPosition) return;
     if (
-      stdout.rows - componentPosition.appHeight + componentPosition.row < 0 ||
-      componentPosition.col > stdout.columns
+      defaultVisibility(componentPosition, stdout.rows, stdout.columns) !==
+      "full"
     ) {
       return;
     }

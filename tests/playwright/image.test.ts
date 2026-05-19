@@ -235,10 +235,6 @@ const verticalOffsetAppHeightCases = [
 ];
 
 test.describe("vertical offset", () => {
-  // kitty is sometimes flaky for some mysterious reason
-  test.describe.configure({
-    retries: 2,
-  });
   for (const protocol of advancedImageProtocols) {
     for (const {
       label,
@@ -313,3 +309,109 @@ test.describe
       });
     }
   });
+
+test("renders with default sizing", async ({ ctx }) => {
+  const ps = await runFixture(
+    "auto-image.tsx",
+    ["--src", "../../example/images/full.png"],
+    ctx.terminalProxy,
+  );
+  await ps.waitForExit();
+  const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+  expect(bufferOutput.length).toBeGreaterThan(0);
+});
+
+test.describe("useVisibility", () => {
+  test("renders with graphical protocol when image is fully visible", async ({
+    ctx,
+  }) => {
+    const ps = await runFixture(
+      "visibility.tsx",
+      ["--src", "../../example/images/full.png", "--appHeight", "50"],
+      ctx.terminalProxy,
+    );
+    await ps.waitUntilReady();
+    await timeout(4000);
+    const cells = await ctx.terminalProxy.cellsContainGraphics(0, 0, 4, 2);
+    for (const cell of cells) {
+      await expect(
+        cell.hasGraphic,
+        `Cell (${cell.x}, ${cell.y}) should contain graphics`,
+      ).toBe(true);
+    }
+  });
+
+  test("falls back to text protocol when image is partially visible in waterfall CLI", async ({
+    ctx,
+  }) => {
+    const ps = await runFixture(
+      "visibility.tsx",
+      ["--src", "../../example/images/full.png", "--appHeight", "51"],
+      ctx.terminalProxy,
+    );
+    await ps.waitUntilReady();
+    await timeout(4000);
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput).toMatch(/^\u2584{4}__READY__\s*\n\u2584{4}\s*$/);
+  });
+
+  test("falls back to text protocol when image is hidden in waterfall CLI", async ({
+    ctx,
+  }) => {
+    const ps = await runFixture(
+      "visibility.tsx",
+      ["--src", "../../example/images/full.png", "--appHeight", "52"],
+      ctx.terminalProxy,
+    );
+    await ps.waitUntilReady();
+    await timeout(4000);
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput).toMatch(/^\u2584{4}__READY__\s*\n\u2584{4}\s*$/);
+  });
+
+  test("falls back to text protocol when image is partially visible in TUI", async ({
+    ctx,
+  }) => {
+    const ps = await runFixture(
+      "visibility.tsx",
+      ["--src", "../../example/images/full.png", "--appHeight", "2"],
+      ctx.terminalProxy,
+    );
+    await ps.waitUntilReady();
+    await timeout(4000);
+    await ps.write("w");
+    await timeout(1000);
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // top part of image should be clipped
+    expect(bufferOutput).toMatch(/^\u2584{4}__READY__\s*$/);
+
+    for (let i = 0; i < 2; i++) {
+      await ps.write("s");
+      await timeout(100);
+    }
+    await timeout(1000);
+    const bufferOutput2 = await ctx.terminalProxy.getBufferAsString();
+    // Bottom half of image should be clipped
+    expect(bufferOutput2).toMatch(/^ {4}__READY__\s*\n\u2584{4}\s*$/);
+  });
+
+  test("respects custom getVisibility logic", async ({ ctx }) => {
+    const ps = await runFixture(
+      "visibility.tsx",
+      [
+        "--src",
+        "../../example/images/full.png",
+        "--appHeight",
+        "2",
+        "--useCustomVisibility",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitUntilReady();
+    await timeout(4000);
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // Default visibility would be "full" since image fits within terminal,
+    // but custom callback forces it to be treated as "partial", thus the text fallback is rendered instead
+    expect(bufferOutput).toMatch(/^\u2584{4}__READY__\s*\n\u2584{4}\s*$/);
+  });
+});
