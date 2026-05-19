@@ -1,7 +1,11 @@
-import { Box, Text, useIsScreenReaderEnabled } from "ink";
-import React, { useCallback, useState } from "react";
+import { Box, useIsScreenReaderEnabled, useStdout } from "ink";
+import React, { useMemo } from "react";
+import { useTerminalInfo } from "../../context/TerminalInfo.js";
+import { useMeasuredSize } from "../../hooks/useMeasuredSize.js";
+import usePosition from "../../hooks/usePosition.js";
 import useProtocol from "../../hooks/useProtocol.js";
-import { getBestProtocol } from "../../utils/getBestProtocol.js";
+import type { GetVisibility } from "../../hooks/useVisibility.js";
+import { useVisibility } from "../../hooks/useVisibility.js";
 import AsciiImage from "./Ascii.js";
 import BrailleImage from "./Braille.js";
 import HalfBlockImage from "./HalfBlock.js";
@@ -21,90 +25,71 @@ const imageProtocols = {
 
 export type ImageProtocolName = keyof typeof imageProtocols;
 
-/**
- * Internal component that renders an image using a specific protocol.
- *
- * @param props - Image props with protocol specification
- * @returns JSX element rendering the image with the specified protocol
- */
 const ImageRenderer = (props: ImageProps & { protocol: ImageProtocolName }) => {
   const ProtocolComponent = imageProtocols[props.protocol];
   return <ProtocolComponent {...props} />;
 };
 
-/**
- * Main Image component with automatic protocol fallback.
- *
- * This component automatically detects terminal capabilities and falls back
- * to supported rendering protocols in order of preference:
- * halfBlock -> braille -> ascii
- *
- * **IMPORTANT: TerminalInfo Provider Requirement**
- * This component MUST be used within a `<TerminalInfoProvider>` component tree.
- * The Image component requires terminal capability detection to function properly
- * and will throw an error if the TerminalInfo context is not available.
- *
- * Example usage:
- * ```tsx
- * import React from 'react';
- * import { Box } from 'ink';
- * import { TerminalInfoProvider } from '../context/TerminalInfo.js';
- * import Image from './components/image/index.js';
- *
- * function App() {
- *   return (
- *     <TerminalInfoProvider>
- *       <Box flexDirection="column">
- *         <Image
- *           src="https://example.com/image.jpg"
- *           width={40}
- *           height={20}
- *           alt="Example image"
- *         />
- *         <Image
- *           src="/local/path/image.png"
- *           protocol="sixel"
- *         />
- *       </Box>
- *     </TerminalInfoProvider>
- *   );
- * }
- * ```
- *
- * Features:
- * - Automatic protocol detection and fallback
- * - Support for multiple image formats (PNG, JPEG, WebP, etc.)
- * - Responsive sizing based on parent container dimensions
- * - Error handling with graceful degradation
- * - Terminal capability detection for optimal rendering
- * - Support for both local files and remote URLs
- *
- * Protocol Options:
- * - `sixel`: (experimental) Highest quality, requires Sixel graphics support
- * - `kitty`: (experimental) High quality, requires Kitty graphics support
- * - `iterm2`: (experimental) High quality, requires iTerm2 graphics support
- * - `braille`: High resolution monochrome, requires Unicode support
- * - `halfBlock`: Good color quality, requires Unicode and color support
- * - `ascii`: Universal compatibility, works in all terminals
- *
- * @param props - Image properties including source, dimensions, and initial protocol
- * @returns JSX element rendering the image with the best supported protocol
- * @throws Error if not used within TerminalInfoProvider context
- */
+type ImageComponentProps = Omit<ImageProps, "width" | "height"> & {
+  width?: number | string;
+  height?: number | string;
+  protocol?: ImageProtocolName;
+  getVisibility?: GetVisibility;
+};
+
 function Image({
   protocol: specifiedProtocol,
+  getVisibility,
+  width = "100%",
+  height = "100%",
   ...props
-}: Omit<ImageProps & { protocol?: ImageProtocolName }, "onSupportDetected">) {
+}: ImageComponentProps) {
   const isScreenReaderEnabled = useIsScreenReaderEnabled();
+  const terminalInfo = useTerminalInfo();
+  const { stdout } = useStdout();
   const protocol = useProtocol(specifiedProtocol);
 
+  const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
+    width,
+    height,
+  );
+
+  const position = usePosition(containerRef);
+  const visibility = useVisibility(
+    position,
+    stdout.rows,
+    stdout.columns,
+    getVisibility,
+  );
+
+  const effectiveProtocol = useMemo((): ImageProtocolName => {
+    if (specifiedProtocol) return specifiedProtocol;
+    if (visibility === "full") return protocol;
+    if (
+      protocol === "ascii" ||
+      protocol === "braille" ||
+      protocol === "halfBlock"
+    )
+      return protocol;
+    if (terminalInfo.supportsUnicode && terminalInfo.supportsColor)
+      return "halfBlock";
+    if (terminalInfo.supportsUnicode) return "braille";
+    return "ascii";
+  }, [
+    visibility,
+    protocol,
+    specifiedProtocol,
+    terminalInfo.supportsUnicode,
+    terminalInfo.supportsColor,
+  ]);
+
   if (isScreenReaderEnabled) {
-    const { src, alt, width, height } = props;
-    // Simulate aria-role because Ink doesn't have a image role
+    const { src, alt } = props;
     const label = `image: ${alt || (typeof src === "string" ? src : "binary image data")}`;
 
     return (
       <Box
+        ref={containerRef}
         width={width}
         height={height}
         aria-label={label}
@@ -113,7 +98,22 @@ function Image({
     );
   }
 
-  return <ImageRenderer protocol={protocol} key={protocol} {...props} />;
+  return (
+    <Box
+      ref={containerRef}
+      width={width}
+      height={height}
+      flexDirection="column"
+    >
+      <ImageRenderer
+        protocol={effectiveProtocol}
+        key={effectiveProtocol}
+        width={resolvedWidth}
+        height={resolvedHeight}
+        {...props}
+      />
+    </Box>
+  );
 }
 
 export default Image;

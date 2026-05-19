@@ -265,6 +265,13 @@ class TerminalProxy {
       [await this.getTerm()],
     );
   }
+
+  async getRows(): Promise<number> {
+    return this._page.evaluate(
+      ([term]) => (term as Terminal).rows,
+      [await this.getTerm()],
+    );
+  }
 }
 
 interface TerminalColorInfo {
@@ -316,6 +323,7 @@ interface ExitStatus {
 }
 
 export interface TerminalProcess {
+  waitUntilReady: () => Promise<void>;
   write: (input: string) => Promise<void>;
   output: string;
   waitForExit: () => Promise<ExitStatus>;
@@ -350,15 +358,18 @@ export async function createTerminalProcess({
   };
 
   const cols = await terminalProxy.getCols();
+  const rows = await terminalProxy.getRows();
 
   const pty = spawn(file, args, {
     name: "xterm-256color",
-    cols: cols,
+    cols,
+    rows,
     cwd: __dirname,
     env,
   });
 
   const result = {
+    waitUntilReady: () => processReadyPromise,
     async write(input: string) {
       // Give TS and Ink time to start up and render UI
       await processReadyPromise;
