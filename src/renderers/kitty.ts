@@ -35,6 +35,12 @@ export function makeKittyPlacement(
   return `\x1b_Ga=p,i=${imageId},p=${placementId},C=1,q=2\x1b\\`;
 }
 
-export function makeKittyDeletion(imageId: number): string {
+export function makeKittyDeletion(
+  imageId: number,
+  placementId?: number,
+): string {
+  if (placementId !== undefined) {
+    return `\x1b_Ga=d,d=i,p=${placementId},i=${imageId}\x1b\\`;
+  }
   return `\x1b_Ga=d,d=I,i=${imageId}\x1b\\`;
 }
