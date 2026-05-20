@@ -81,13 +81,30 @@ describe("makeKittyPlacement", () => {
 });
 
 describe("makeKittyDeletion", () => {
-  it("produces correct deletion escape sequence", () => {
+  it("produces correct deletion escape sequence (delete image data)", () => {
     const result = makeKittyDeletion(25);
 
     expect(result).toContain("a=d");
     expect(result).toContain("d=I");
     expect(result).toContain("i=25");
+    expect(result).not.toContain("p=");
     expect(result.startsWith("\x1b_G")).toBe(true);
     expect(result.endsWith("\x1b\\")).toBe(true);
+  });
+
+  it("produces correct placement deletion escape sequence", () => {
+    const result = makeKittyDeletion(42, 1);
+
+    expect(result).toContain("a=d");
+    expect(result).toContain("d=i");
+    expect(result).toContain("p=1");
+    expect(result).toContain("i=42");
+    expect(result.startsWith("\x1b_G")).toBe(true);
+    expect(result.endsWith("\x1b\\")).toBe(true);
+  });
+
+  it("uses provided placement ID for placement deletion", () => {
+    const result = makeKittyDeletion(10, 7);
+    expect(result).toContain("p=7");
   });
 });

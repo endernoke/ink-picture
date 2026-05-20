@@ -39,6 +39,7 @@ function KittyImage(props: ImageProps) {
 
   const [imageId, setImageId] = useState<number | undefined>(undefined);
   const shouldCleanupRef = useRef(true);
+  const wasPlacedRef = useRef(false);
 
   useEffect(() => {
     if (!imageData) return;
@@ -55,10 +56,15 @@ function KittyImage(props: ImageProps) {
   useEffect(() => {
     if (!imageId) return;
     if (!componentPosition) return;
+
     if (
       defaultVisibility(componentPosition, stdout.rows, stdout.columns) !==
       "full"
     ) {
+      if (wasPlacedRef.current) {
+        stdout.write(makeKittyDeletion(imageId, 1));
+        wasPlacedRef.current = false;
+      }
       return;
     }
 
@@ -75,6 +81,8 @@ function KittyImage(props: ImageProps) {
     stdout.write(makeKittyPlacement(imageId, 1));
 
     stdout.write("\x1b8");
+
+    wasPlacedRef.current = true;
   });
 
   const onExit = useCallback(() => {
@@ -98,6 +106,8 @@ function KittyImage(props: ImageProps) {
       if (!shouldCleanupRef.current) return;
       if (!imageId) return;
 
+      // We always delete during unmount regardless of whether the image is placed
+      // in order to remove the image data from the terminal
       stdout.write(makeKittyDeletion(imageId));
     };
   }, [imageId, onExit, onSigInt, stdout.write]);
