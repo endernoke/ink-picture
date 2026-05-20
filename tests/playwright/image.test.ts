@@ -415,3 +415,36 @@ test.describe("useVisibility", () => {
     expect(bufferOutput).toMatch(/^\u2584{4}__READY__\s*\n\u2584{4}\s*$/);
   });
 });
+
+test.describe("protocol hints", () => {
+  test("string protocol forces that protocol always", async ({ ctx }) => {
+    const ps = await runFixture(
+      "protocol-hint.tsx",
+      ["--src", "../../example/images/full.png", "--protocol", "ascii"],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput).toMatch(
+      /^[A-Za-z0-9~`!@#$%^&*()\-_=+\\|[{\]}'";:/?.>,<]{4}\s*\n[A-Za-z0-9~`!@#$%^&*()\-_=+\\|[{\]}'";:/?.>,<]{4}\s*$/,
+    );
+  });
+
+  test("object hint uses the specified protocol for full visibility", async ({
+    ctx,
+  }) => {
+    const ps = await runFixture(
+      "protocol-hint.tsx",
+      [
+        "--src",
+        "../../example/images/full.png",
+        "--protocol",
+        JSON.stringify({ full: "halfBlock" }),
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput).toMatch(/^\u2584{4}\s*\n\u2584{4}\s*$/);
+  });
+});

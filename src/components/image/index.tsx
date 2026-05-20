@@ -4,7 +4,7 @@ import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import { useMeasuredSize } from "../../hooks/useMeasuredSize.js";
 import usePosition from "../../hooks/usePosition.js";
 import useProtocol from "../../hooks/useProtocol.js";
-import type { GetVisibility } from "../../hooks/useVisibility.js";
+import type { GetVisibility, Visibility } from "../../hooks/useVisibility.js";
 import { useVisibility } from "../../hooks/useVisibility.js";
 import AsciiImage from "./Ascii.js";
 import BrailleImage from "./Braille.js";
@@ -25,6 +25,8 @@ const imageProtocols = {
 
 export type ImageProtocolName = keyof typeof imageProtocols;
 
+export type ImageProtocolHint = Partial<Record<Visibility, ImageProtocolName>>;
+
 const ImageRenderer = (props: ImageProps & { protocol: ImageProtocolName }) => {
   const ProtocolComponent = imageProtocols[props.protocol];
   return <ProtocolComponent {...props} />;
@@ -33,7 +35,7 @@ const ImageRenderer = (props: ImageProps & { protocol: ImageProtocolName }) => {
 type ImageComponentProps = Omit<ImageProps, "width" | "height"> & {
   width?: number | string;
   height?: number | string;
-  protocol?: ImageProtocolName;
+  protocol?: ImageProtocolName | ImageProtocolHint;
   getVisibility?: GetVisibility;
 };
 
@@ -47,7 +49,9 @@ function Image({
   const isScreenReaderEnabled = useIsScreenReaderEnabled();
   const terminalInfo = useTerminalInfo();
   const { stdout } = useStdout();
-  const protocol = useProtocol(specifiedProtocol);
+  const protocol = useProtocol(
+    typeof specifiedProtocol === "string" ? specifiedProtocol : undefined,
+  );
 
   const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
     width,
@@ -63,14 +67,21 @@ function Image({
   );
 
   const effectiveProtocol = useMemo((): ImageProtocolName => {
-    if (specifiedProtocol) return specifiedProtocol;
+    if (typeof specifiedProtocol === "string") return specifiedProtocol;
+
+    const hints: ImageProtocolHint = specifiedProtocol ?? {};
+    const hint = hints[visibility];
+    if (hint) return hint;
+
     if (visibility === "full") return protocol;
+
     if (
       protocol === "ascii" ||
       protocol === "braille" ||
       protocol === "halfBlock"
     )
       return protocol;
+
     if (terminalInfo.supportsUnicode && terminalInfo.supportsColor)
       return "halfBlock";
     if (terminalInfo.supportsUnicode) return "braille";

@@ -35,7 +35,10 @@
 export { default as AsciiImage } from "./components/image/Ascii.js";
 export { default as BrailleImage } from "./components/image/Braille.js";
 export { default as HalfBlockImage } from "./components/image/HalfBlock.js";
-export type { ImageProtocolName } from "./components/image/index.js";
+export type {
+  ImageProtocolHint,
+  ImageProtocolName,
+} from "./components/image/index.js";
 // Main Image component - the primary export
 export { default } from "./components/image/index.js";
 // Types and interfaces
