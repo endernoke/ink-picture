@@ -1,5 +1,5 @@
-import { useTerminalInfo } from "../context/TerminalInfo";
-import { getBestProtocol } from "../utils/getBestProtocol";
+import { useTerminalInfo } from "../context/TerminalInfo.js";
+import { getBestProtocol } from "../utils/getBestProtocol.js";
 
 export default function useProtocol(
   specifiedProtocol?:
