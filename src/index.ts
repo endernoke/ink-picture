@@ -59,4 +59,9 @@ export type {
 } from "./hooks/useVisibility.js";
 export { useVisibility } from "./hooks/useVisibility.js";
 
-// Note: utils are kept internal for now, but can be exported later if needed
+export {
+  clearImageCache,
+  getCachedImage,
+  getCacheSize,
+  setCachedImage,
+} from "./utils/imageCache.js";

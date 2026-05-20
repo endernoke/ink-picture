@@ -2,6 +2,7 @@ import { type Jimp } from "jimp";
 import { useEffect, useState } from "react";
 import type { PixelData, PngData } from "../renderers/types.js";
 import { fetchImage, getPngBuffer, getRawPixels } from "../utils/image.js";
+import { getCachedImage, setCachedImage } from "../utils/imageCache.js";
 
 export function useImage<T extends "pixels" | "png" = "pixels">(options: {
   src: Parameters<typeof Jimp.read>[0];
@@ -23,13 +24,21 @@ export function useImage<T extends "pixels" | "png" = "pixels">(options: {
     let cancelled = false;
 
     const load = async () => {
-      const image = await fetchImage(src);
-      if (cancelled) return;
+      let image = typeof src === "string" ? getCachedImage(src) : undefined;
 
       if (!image) {
-        setError(true);
-        setImageData(undefined);
-        return;
+        image = await fetchImage(src);
+        if (cancelled) return;
+
+        if (!image) {
+          setError(true);
+          setImageData(undefined);
+          return;
+        }
+
+        if (typeof src === "string") {
+          setCachedImage(src, image);
+        }
       }
 
       setError(false);
