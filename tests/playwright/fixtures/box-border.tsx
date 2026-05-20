@@ -1,4 +1,3 @@
-import process from "node:process";
 import { Box, render, Text } from "ink";
 import React, { useEffect, useState } from "react";
 import Image, { ImageProtocolName, TerminalInfoProvider } from "../../../src";
