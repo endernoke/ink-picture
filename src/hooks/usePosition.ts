@@ -40,11 +40,11 @@ const usePosition = (
   const [position, setPosition] = useState<Position | undefined>(undefined);
 
   const updatePosition = useCallback(() => {
-    if (!ref.current?.yogaNode) {
+    const node = ref.current;
+    if (!node?.yogaNode) {
       return;
     }
 
-    const { current: node } = ref;
     const { yogaNode } = node;
 
     // Calculate absolute position by traversing up the tree
@@ -68,8 +68,8 @@ const usePosition = (
     const newPosition: Position = {
       col: absoluteCol,
       row: absoluteRow,
-      width: yogaNode!.getComputedWidth(),
-      height: yogaNode!.getComputedHeight(),
+      width: yogaNode.getComputedWidth(),
+      height: yogaNode.getComputedHeight(),
       appWidth,
       appHeight,
     };
@@ -93,11 +93,21 @@ const usePosition = (
   }, [ref]);
 
   // Calculate position after every render
-  // This ensures we capture all layout changes from the root node down
-  // Otherwise we will need to track changes in all of the node's parent nodes which is also expensive
+  // This captures layout changes caused by the component's own re-renders
   useEffect(() => {
     updatePosition();
   });
+
+  // Poll to detect layout changes that happen without re-rendering
+  // e.g. parent layout changes, where React bails out from re-rendering children
+  useEffect(() => {
+    const interval = setInterval(updatePosition, 16);
+    interval.unref();
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [updatePosition]);
 
   return position;
 };
