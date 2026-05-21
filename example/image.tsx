@@ -13,12 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 function getImagePath(): string {
-  return `${__dirname}/images/${getAllowPartial() ? "partial.jpeg" : "full.png"}`;
-}
-
-function getAllowPartial() {
-  const args = process.argv.slice(2);
-  return args.length > 0 && args[0].startsWith("--partial");
+  return `${__dirname}/images/full.png`;
 }
 
 type ProtocolConfig = {
@@ -137,7 +132,6 @@ function ProtocolDemo({ config }: { config: ProtocolConfig }) {
             height={12}
             protocol={config.protocol}
             alt={`${config.name} demo`}
-            allowPartial={getAllowPartial()}
           />
         ) : (
           <Box

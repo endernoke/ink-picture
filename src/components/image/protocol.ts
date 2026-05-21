@@ -20,8 +20,6 @@ export interface ImageProps {
   height: number | string;
   /** Alternative text displayed while loading or on error */
   alt?: string;
-  /** Supports partially loaded image reading */
-  allowPartial?: boolean;
 }
 
 /**
