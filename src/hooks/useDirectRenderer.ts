@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { cursorForward, cursorUp } from "../utils/ansiEscapes.js";
 import bgColorize from "../utils/bgColorize.js";
 import type { Position } from "./usePosition.js";
@@ -31,6 +31,9 @@ export function useDirectRenderer(options: DirectRendererOptions) {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
+
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   useLayoutEffect(() => {
     if (!enabled) return;
@@ -103,4 +106,40 @@ export function useDirectRenderer(options: DirectRendererOptions) {
       stdout.write("\x1b8");
     };
   });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const opt = optionsRef.current;
+      if (!opt.enabled || !opt.position) return;
+      if (
+        defaultVisibility(opt.position, opt.stdout.rows, opt.stdout.columns) !==
+        "full"
+      )
+        return;
+
+      opt.stdout.write("\x1b7");
+      opt.stdout.write(
+        cursorUp(opt.position.appHeight - opt.position.row, {
+          appHeight: opt.position.appHeight,
+          terminalHeight: opt.stdout.rows,
+        }),
+      );
+      opt.stdout.write("\r");
+      opt.stdout.write(cursorForward(opt.position.col));
+      opt.stdout.write(opt.imageOutput);
+      opt.stdout.write("\x1b8");
+
+      previousBboxRef.current = {
+        row: opt.stdout.rows - opt.position.appHeight + opt.position.row,
+        col: opt.position.col,
+        width: opt.width,
+        height: opt.height,
+      };
+    }, 32);
+    interval.unref();
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 }
