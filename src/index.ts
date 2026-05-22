@@ -9,11 +9,11 @@
  * ```tsx
  * import React from 'react';
  * import { Box } from 'ink';
- * import Image, { TerminalInfoProvider } from 'ink-picture';
+ * import Image, { InkPictureProvider } from 'ink-picture';
  *
  * function App() {
  *   return (
- *     <TerminalInfoProvider>
+ *     <InkPictureProvider>
  *       <Box flexDirection="column">
  *         <Image
  *           src="https://example.com/image.jpg"
@@ -22,13 +22,13 @@
  *           alt="Example image"
  *         />
  *       </Box>
- *     </TerminalInfoProvider>
+ *     </InkPictureProvider>
  *   );
  * }
- *
- * Notice that the Image component must be used within a TerminalInfoProvider.
- * This ensures terminal capabilities and information (like width and height in pixels) are detected and provided to the Image component.
  * ```
+ *
+ * The Image component must be used within an InkPictureProvider.
+ * This ensures terminal capabilities and configuration are detected and provided.
  */
 
 // Individual image rendering components - for advanced usage
@@ -44,15 +44,20 @@ export { default } from "./components/image/index.js";
 // Types and interfaces
 export type { ImageProps, ImageProtocol } from "./components/image/protocol.js";
 export { default as SixelImage } from "./components/image/Sixel.js";
+
+export {
+  type Config,
+  getPollInterval,
+  getPositionPollInterval,
+  setConfig,
+} from "./config.js";
+
 export type { TerminalInfo } from "./context/TerminalInfo.js";
-// Terminal info context and provider - required for Image component
 export {
   defaultTerminalInfo,
   TerminalInfoContext,
-  TerminalInfoProvider,
   useTerminalInfo,
 } from "./context/TerminalInfo.js";
-
 // Utility hooks
 export { default as usePosition } from "./hooks/usePosition.js";
 export type {
@@ -61,7 +66,12 @@ export type {
   VisibilityInfo,
 } from "./hooks/useVisibility.js";
 export { useVisibility } from "./hooks/useVisibility.js";
-
+export {
+  type InkPictureConfig,
+  InkPictureProvider,
+  TerminalInfoProvider,
+  useInkPictureConfig,
+} from "./InkPictureProvider.js";
 export {
   clearImageCache,
   getCachedImage,

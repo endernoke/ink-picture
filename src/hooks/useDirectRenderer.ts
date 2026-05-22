@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
+import { useInkPictureConfig } from "../InkPictureProvider.js";
 import { cursorForward, cursorUp } from "../utils/ansiEscapes.js";
 import bgColorize from "../utils/bgColorize.js";
 import type { Position } from "./usePosition.js";
@@ -12,6 +13,33 @@ interface DirectRendererOptions {
   width: number;
   height: number;
   backgroundColor?: string;
+}
+
+function writeImageToStdout(
+  pos: Position,
+  output: string,
+  stream: NodeJS.WriteStream,
+  w: number,
+  h: number,
+): { row: number; col: number; width: number; height: number } {
+  stream.write("\x1b7");
+  stream.write(
+    cursorUp(pos.appHeight - pos.row, {
+      appHeight: pos.appHeight,
+      terminalHeight: stream.rows,
+    }),
+  );
+  stream.write("\r");
+  stream.write(cursorForward(pos.col));
+  stream.write(output);
+  stream.write("\x1b8");
+
+  return {
+    row: stream.rows - pos.appHeight + pos.row,
+    col: pos.col,
+    width: w,
+    height: h,
+  };
 }
 
 export function useDirectRenderer(options: DirectRendererOptions) {
@@ -35,6 +63,10 @@ export function useDirectRenderer(options: DirectRendererOptions) {
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
+  const config = useInkPictureConfig();
+  const configRef = useRef(config);
+  configRef.current = config;
+
   useLayoutEffect(() => {
     if (!enabled) return;
     if (!position) return;
@@ -55,24 +87,13 @@ export function useDirectRenderer(options: DirectRendererOptions) {
     process.on("SIGTERM", onSigInt);
 
     timeoutRef.current = setTimeout(() => {
-      stdout.write("\x1b7"); // Save cursor position
-      stdout.write(
-        cursorUp(position.appHeight - position.row, {
-          appHeight: position.appHeight,
-          terminalHeight: stdout.rows,
-        }),
-      );
-      stdout.write("\r");
-      stdout.write(cursorForward(position.col));
-      stdout.write(imageOutput);
-      stdout.write("\x1b8"); // Restore cursor position
-
-      previousBboxRef.current = {
-        row: stdout.rows - position.appHeight + position.row,
-        col: position.col,
+      previousBboxRef.current = writeImageToStdout(
+        position,
+        imageOutput,
+        stdout,
         width,
         height,
-      };
+      );
     }, 100);
 
     return () => {
@@ -108,38 +129,42 @@ export function useDirectRenderer(options: DirectRendererOptions) {
   });
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+
+    function schedule() {
+      timeout = setTimeout(tick, configRef.current.pollInterval);
+      timeout.unref();
+    }
+
+    function tick() {
       const opt = optionsRef.current;
-      if (!opt.enabled || !opt.position) return;
+      if (!opt.enabled || !opt.position) {
+        schedule();
+        return;
+      }
       if (
         defaultVisibility(opt.position, opt.stdout.rows, opt.stdout.columns) !==
         "full"
-      )
+      ) {
+        schedule();
         return;
+      }
 
-      opt.stdout.write("\x1b7");
-      opt.stdout.write(
-        cursorUp(opt.position.appHeight - opt.position.row, {
-          appHeight: opt.position.appHeight,
-          terminalHeight: opt.stdout.rows,
-        }),
+      previousBboxRef.current = writeImageToStdout(
+        opt.position,
+        opt.imageOutput,
+        opt.stdout,
+        opt.width,
+        opt.height,
       );
-      opt.stdout.write("\r");
-      opt.stdout.write(cursorForward(opt.position.col));
-      opt.stdout.write(opt.imageOutput);
-      opt.stdout.write("\x1b8");
 
-      previousBboxRef.current = {
-        row: opt.stdout.rows - opt.position.appHeight + opt.position.row,
-        col: opt.position.col,
-        width: opt.width,
-        height: opt.height,
-      };
-    }, 32);
-    interval.unref();
+      schedule();
+    }
+
+    schedule();
 
     return () => {
-      clearInterval(interval);
+      clearTimeout(timeout);
     };
   }, []);
 }

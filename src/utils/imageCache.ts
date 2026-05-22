@@ -1,6 +1,5 @@
+import { getCacheSize as getMaxCacheSize } from "../config.js";
 import type { JimpImage } from "./image.js";
-
-const ENV_MAX_ENTRIES = "INK_PICTURE_CACHE_SIZE";
 
 class ImageCache {
   #cache = new Map<string, JimpImage>();
@@ -40,29 +39,27 @@ class ImageCache {
   }
 }
 
-function parseCacheSize(): number {
-  const raw = process.env[ENV_MAX_ENTRIES];
-  if (raw === undefined) return 10;
-  const n = parseInt(raw, 10);
-  if (!Number.isFinite(n) || n < 0) return 10;
-  return n;
+let cache: ImageCache | null | undefined;
+
+function getOrCreateCache(): ImageCache | null {
+  if (cache !== undefined) return cache;
+  const maxEntries = getMaxCacheSize();
+  cache = maxEntries === 0 ? null : new ImageCache(maxEntries);
+  return cache;
 }
 
-const maxEntries = parseCacheSize();
-const cache = maxEntries === 0 ? null : new ImageCache(maxEntries);
-
 export function getCachedImage(src: string): JimpImage | undefined {
-  return cache?.get(src);
+  return getOrCreateCache()?.get(src);
 }
 
 export function setCachedImage(src: string, image: JimpImage): void {
-  cache?.set(src, image);
+  getOrCreateCache()?.set(src, image);
 }
 
 export function clearImageCache(): void {
-  cache?.clear();
+  getOrCreateCache()?.clear();
 }
 
 export function getCacheSize(): number {
-  return cache?.size ?? 0;
+  return getOrCreateCache()?.size ?? 0;
 }

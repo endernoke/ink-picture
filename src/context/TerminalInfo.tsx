@@ -11,7 +11,7 @@ import React, {
 import supportsColor from "supports-color";
 import { queryTerminal } from "../utils/queryTerminal.js";
 
-function supportsITerm2(context?: {
+export function supportsITerm2(context?: {
   supportsSixelGraphics: boolean;
   hasITermCellSizeResponse: boolean;
 }) {
