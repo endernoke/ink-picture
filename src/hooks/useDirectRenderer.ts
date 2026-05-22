@@ -43,22 +43,11 @@ function writeImageToStdout(
 }
 
 export function useDirectRenderer(options: DirectRendererOptions) {
-  const {
-    enabled,
-    imageOutput,
-    position,
-    stdout,
-    width,
-    height,
-    backgroundColor,
-  } = options;
+  const { position, stdout, backgroundColor } = options;
   const shouldCleanupRef = useRef(true);
   const previousBboxRef = useRef<
     { row: number; col: number; width: number; height: number } | undefined
   >(undefined);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
 
   const optionsRef = useRef(options);
   optionsRef.current = options;
@@ -68,44 +57,11 @@ export function useDirectRenderer(options: DirectRendererOptions) {
   configRef.current = config;
 
   useLayoutEffect(() => {
-    if (!enabled) return;
-    if (!position) return;
-    if (defaultVisibility(position, stdout.rows, stdout.columns) !== "full")
-      return;
-
-    shouldCleanupRef.current = true;
-
-    function onExit() {
-      shouldCleanupRef.current = false;
-    }
-    function onSigInt() {
-      shouldCleanupRef.current = false;
-      process.exit();
-    }
-    process.on("exit", onExit);
-    process.on("SIGINT", onSigInt);
-    process.on("SIGTERM", onSigInt);
-
-    timeoutRef.current = setTimeout(() => {
-      previousBboxRef.current = writeImageToStdout(
-        position,
-        imageOutput,
-        stdout,
-        width,
-        height,
-      );
-    }, 100);
-
     return () => {
-      process.removeListener("exit", onExit);
-      process.removeListener("SIGINT", onSigInt);
-      process.removeListener("SIGTERM", onSigInt);
-
       if (!shouldCleanupRef.current) return;
-      clearTimeout(timeoutRef.current);
 
       const bbox = previousBboxRef.current;
-      if (!bbox) return;
+      if (!bbox || !position) return;
 
       stdout.write("\x1b7");
       stdout.write(
@@ -130,6 +86,17 @@ export function useDirectRenderer(options: DirectRendererOptions) {
 
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
+
+    function onExit() {
+      shouldCleanupRef.current = false;
+    }
+    function onSigInt() {
+      shouldCleanupRef.current = false;
+      process.exit();
+    }
+    process.on("exit", onExit);
+    process.on("SIGINT", onSigInt);
+    process.on("SIGTERM", onSigInt);
 
     function schedule() {
       timeout = setTimeout(tick, configRef.current.pollInterval);
@@ -164,6 +131,9 @@ export function useDirectRenderer(options: DirectRendererOptions) {
     schedule();
 
     return () => {
+      process.removeListener("exit", onExit);
+      process.removeListener("SIGINT", onSigInt);
+      process.removeListener("SIGTERM", onSigInt);
       clearTimeout(timeout);
     };
   }, []);
