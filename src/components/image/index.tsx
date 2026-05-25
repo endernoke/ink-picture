@@ -1,11 +1,11 @@
 import { Box, useIsScreenReaderEnabled, useStdout } from "ink";
 import React, { useMemo } from "react";
-import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import { useMeasuredSize } from "../../hooks/useMeasuredSize.js";
 import usePosition from "../../hooks/usePosition.js";
 import useProtocol from "../../hooks/useProtocol.js";
 import type { GetVisibility, Visibility } from "../../hooks/useVisibility.js";
 import { useVisibility } from "../../hooks/useVisibility.js";
+import { useTerminalInfo } from "../../InkPictureProvider.js";
 import AsciiImage from "./Ascii.js";
 import BrailleImage from "./Braille.js";
 import HalfBlockImage from "./HalfBlock.js";

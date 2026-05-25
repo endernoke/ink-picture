@@ -45,13 +45,6 @@ export { default } from "./components/image/index.js";
 export type { ImageProps, ImageProtocol } from "./components/image/protocol.js";
 export { default as SixelImage } from "./components/image/Sixel.js";
 
-export type { TerminalInfo } from "./context/TerminalInfo.js";
-export {
-  defaultTerminalInfo,
-  TerminalInfoContext,
-  useTerminalInfo,
-} from "./context/TerminalInfo.js";
-// Utility hooks
 export { default as usePosition } from "./hooks/usePosition.js";
 export type {
   GetVisibility,
@@ -59,10 +52,16 @@ export type {
   VisibilityInfo,
 } from "./hooks/useVisibility.js";
 export { useVisibility } from "./hooks/useVisibility.js";
+
 export {
+  defaultConfig as defaultInkPictureConfig,
+  defaultTerminalInfo,
   type InkPictureConfig,
   InkPictureProvider,
+  type TerminalInfo,
+  TerminalInfoContext,
   TerminalInfoProvider,
   useImageCache,
   useInkPictureConfig,
+  useTerminalInfo,
 } from "./InkPictureProvider.js";

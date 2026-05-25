@@ -1,6 +1,6 @@
 import { render, Text, useApp, useInput } from "ink";
 import React from "react";
-import { TerminalInfoProvider } from "../../../src/context/TerminalInfo.js";
+import { TerminalInfoProvider } from "../../../src";
 
 function UserInput() {
   const { exit } = useApp();

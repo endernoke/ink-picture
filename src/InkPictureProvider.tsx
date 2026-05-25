@@ -1,5 +1,6 @@
 import { useStdin } from "ink";
 import checkIsUnicodeSupported from "is-unicode-supported";
+import iterm2Version from "iterm2-version";
 import React, {
   createContext,
   useContext,
@@ -9,13 +10,6 @@ import React, {
   useState,
 } from "react";
 import supportsColor from "supports-color";
-import {
-  defaultTerminalInfo,
-  supportsITerm2,
-  type TerminalInfo,
-  TerminalInfoContext,
-  useTerminalInfo,
-} from "./context/TerminalInfo.js";
 import { ImageCache } from "./utils/imageCache.js";
 import { queryTerminal } from "./utils/queryTerminal.js";
 
@@ -40,7 +34,7 @@ export interface InkPictureConfig {
   cacheSize: number;
 }
 
-const defaultConfig: InkPictureConfig = {
+export const defaultConfig: InkPictureConfig = {
   pollIntervalMs: 16,
   paintIntervalMs: 16,
   cacheSize: 10,
@@ -56,6 +50,124 @@ const ImageCacheContext = createContext<ImageCache | null>(null);
 
 export function useImageCache(): ImageCache | null {
   return useContext(ImageCacheContext);
+}
+
+export interface TerminalInfo {
+  /** Terminal viewport width in pixels */
+  terminalWidth: number;
+  /** Terminal viewport height in pixels */
+  terminalHeight: number;
+  /** Width of a single character cell in pixels */
+  cellWidth: number;
+  /** Height of a single character cell in pixels */
+  cellHeight: number;
+  /** Whether the terminal supports Unicode characters */
+  supportsUnicode: boolean;
+  /** Whether the terminal supports color output */
+  supportsColor: boolean;
+  /** Whether the terminal supports Sixel graphics protocol */
+  supportsSixelGraphics: boolean;
+  /** Whether the terminal supports Kitty graphics protocol */
+  supportsKittyGraphics: boolean;
+  /** Whether the terminal supports iTerm2 inline images */
+  supportsITerm2Graphics: boolean;
+}
+
+export const defaultTerminalInfo: TerminalInfo = {
+  terminalWidth: 6 * process.stdout.columns,
+  terminalHeight: 12 * process.stdout.rows,
+  cellWidth: 6,
+  cellHeight: 12,
+  supportsUnicode: false,
+  supportsColor: false,
+  supportsSixelGraphics: false,
+  supportsKittyGraphics: false,
+  supportsITerm2Graphics: false,
+};
+
+export const TerminalInfoContext = createContext<TerminalInfo | undefined>(
+  undefined,
+);
+
+export const useTerminalInfo = () => {
+  const terminalInfo = useContext(TerminalInfoContext);
+
+  return terminalInfo ?? defaultTerminalInfo;
+};
+
+function supportsITerm2(context?: {
+  supportsSixelGraphics: boolean;
+  hasITermCellSizeResponse: boolean;
+}) {
+  if (context?.hasITermCellSizeResponse) return true;
+  if (process.env.TERM_PROGRAM === "iTerm.app") {
+    const version = iterm2Version();
+    if (!version || Number(version[0]) < 3) return false;
+    return true;
+  } else if (process.env.TERM_PROGRAM === "WezTerm") {
+    // WezTerm is compatible with iTerm2 inline images starting from version 20220319-142410-0fcdea07
+    // See https://wezterm.org/imgcat.html
+    const version = process.env.TERM_PROGRAM_VERSION;
+    if (!version) return false;
+    const date = parseInt(version.split("-")[0], 10);
+    if (!Number.isNaN(date) && date >= 20220319) {
+      return true;
+    }
+  } else if (process.env.KONSOLE_VERSION) {
+    // Konsole supports iTerm2 inline images since some time around 2022
+    // See https://www.reddit.com/r/kde/comments/ul0irg/konsole_2204_with_sixel_support_is_out_of_beta_now/
+    const version = process.env.KONSOLE_VERSION;
+    if (!version) return false;
+    const date = parseInt(version, 10);
+    if (!Number.isNaN(date) && date >= 220400) {
+      return true;
+    }
+  } else if (process.env.TERM_PROGRAM === "rio") {
+    // Rio terminal supports iTerm2 inline images since version 0.1.13
+    // See https://github.com/raphamorim/rio/releases/tag/v0.1.13
+    const version = process.env.TERM_PROGRAM_VERSION;
+    if (!version) return false;
+    const [major, minor, patch] = version
+      .split(".")
+      .map((v) => parseInt(v, 10));
+    if (
+      !Number.isNaN(major) &&
+      !Number.isNaN(minor) &&
+      !Number.isNaN(patch) &&
+      (major > 0 ||
+        (major === 0 && minor > 1) ||
+        (major === 0 && minor === 1 && patch >= 13))
+    ) {
+      return true;
+    }
+  } else if (process.env.TERM_PROGRAM === "vscode") {
+    // VS Code's integrated terminal can be configured to support Sixel and iTerm2 graphics
+    // If Sixel is supported, iTerm2 images are also supported
+    if (context?.supportsSixelGraphics) {
+      return true;
+    }
+  } else if (process.env.TERM_PROGRAM === "WarpTerminal") {
+    const version = process.env.TERM_PROGRAM_VERSION;
+    // Supported since v0.2025.03.05.08.02
+    // See https://docs.warp.dev/getting-started/changelog
+    if (version) {
+      const [, year, month, day] = version
+        .slice(1)
+        .split(".")
+        .map((v) => parseInt(v, 10));
+      if (
+        !Number.isNaN(year) &&
+        !Number.isNaN(month) &&
+        !Number.isNaN(day) &&
+        (year > 2025 ||
+          (year === 2025 && month > 3) ||
+          (year === 2025 && month === 3 && day >= 5))
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 interface InkPictureProviderProps {

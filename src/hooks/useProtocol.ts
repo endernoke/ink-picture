@@ -1,4 +1,4 @@
-import { useTerminalInfo } from "../context/TerminalInfo.js";
+import { useTerminalInfo } from "../InkPictureProvider.js";
 import { getBestProtocol } from "../utils/getBestProtocol.js";
 
 export default function useProtocol(
