@@ -12,7 +12,13 @@ class KittyIdGenerator {
   generateId(): number {
     // Reuse freed ID if available
     if (this.freedIds.size > 0) {
-      const reusedId = this.freedIds.values().next().value!;
+      const result = this.freedIds.values().next();
+      if (result.done) {
+        throw new Error(
+          "Kitty ID reuse error: Set iterator unexpectedly empty",
+        );
+      }
+      const reusedId = result.value;
       this.freedIds.delete(reusedId);
       return reusedId;
     }

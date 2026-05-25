@@ -3,7 +3,7 @@
  *
  * This library provides components for rendering images in terminal applications
  * built with Ink. It supports multiple rendering protocols with automatic fallback:
- * Half-Block, Braille, ASCII, and Sixel (experimental).
+ * Kitty, iTerm2, Sixel, Half-Block, Braille, and ASCII.
  *
  * @example
  * ```tsx
@@ -31,17 +31,16 @@
  * This ensures terminal capabilities and configuration are detected and provided.
  */
 
-// Individual image rendering components - for advanced usage
 export { default as AsciiImage } from "./components/image/Ascii.js";
 export { default as BrailleImage } from "./components/image/Braille.js";
 export { default as HalfBlockImage } from "./components/image/HalfBlock.js";
+export { default as ITerm2Image } from "./components/image/ITerm2.js";
 export type {
   ImageProtocolHint,
   ImageProtocolName,
 } from "./components/image/index.js";
-// Main Image component - the primary export
 export { default } from "./components/image/index.js";
-// Types and interfaces
+export { default as KittyImage } from "./components/image/Kitty.js";
 export type { ImageProps, ImageProtocol } from "./components/image/protocol.js";
 export { default as SixelImage } from "./components/image/Sixel.js";
 

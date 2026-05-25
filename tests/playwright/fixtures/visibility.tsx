@@ -1,4 +1,4 @@
-import { Box, render, Text, useApp, useInput } from "ink";
+import { Box, render, Text, useInput } from "ink";
 import React, { useState } from "react";
 import Image, {
   ImageProtocolName,
@@ -20,7 +20,6 @@ const getVisibility = useCustomVisibility
 
 export function App() {
   const [marginTop, setMarginTop] = useState(0);
-  const { exit } = useApp();
   useInput((input, key) => {
     if (input === "w" || key.upArrow) {
       setMarginTop((prev) => prev - 1);

@@ -28,9 +28,7 @@ function checkCellsHaveGraphics(
   return true;
 }
 
-const basicImageProtocols = ["ascii", "braille", "halfBlock"];
 const advancedImageProtocols = ["sixel", "iterm2", "kitty"];
-const imageProtocols = [...basicImageProtocols, ...advancedImageProtocols];
 
 test.describe("basic rendering", () => {
   test("renders standalone image", async ({ ctx }) => {
