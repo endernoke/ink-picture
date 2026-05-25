@@ -99,7 +99,7 @@ export function useDirectRenderer(options: DirectRendererOptions) {
     process.on("SIGTERM", onSigInt);
 
     function schedule() {
-      timeout = setTimeout(tick, configRef.current.pollInterval);
+      timeout = setTimeout(tick, configRef.current.paintIntervalMs);
       timeout.unref();
     }
 

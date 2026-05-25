@@ -1,7 +1,6 @@
-import { getCacheSize as getMaxCacheSize } from "../config.js";
 import type { JimpImage } from "./image.js";
 
-class ImageCache {
+export class ImageCache {
   #cache = new Map<string, JimpImage>();
   #maxEntries: number;
 
@@ -37,29 +36,4 @@ class ImageCache {
   get size(): number {
     return this.#cache.size;
   }
-}
-
-let cache: ImageCache | null | undefined;
-
-function getOrCreateCache(): ImageCache | null {
-  if (cache !== undefined) return cache;
-  const maxEntries = getMaxCacheSize();
-  cache = maxEntries === 0 ? null : new ImageCache(maxEntries);
-  return cache;
-}
-
-export function getCachedImage(src: string): JimpImage | undefined {
-  return getOrCreateCache()?.get(src);
-}
-
-export function setCachedImage(src: string, image: JimpImage): void {
-  getOrCreateCache()?.set(src, image);
-}
-
-export function clearImageCache(): void {
-  getOrCreateCache()?.clear();
-}
-
-export function getCacheSize(): number {
-  return getOrCreateCache()?.size ?? 0;
 }

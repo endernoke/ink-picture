@@ -45,13 +45,6 @@ export { default } from "./components/image/index.js";
 export type { ImageProps, ImageProtocol } from "./components/image/protocol.js";
 export { default as SixelImage } from "./components/image/Sixel.js";
 
-export {
-  type Config,
-  getPollInterval,
-  getPositionPollInterval,
-  setConfig,
-} from "./config.js";
-
 export type { TerminalInfo } from "./context/TerminalInfo.js";
 export {
   defaultTerminalInfo,
@@ -70,11 +63,6 @@ export {
   type InkPictureConfig,
   InkPictureProvider,
   TerminalInfoProvider,
+  useImageCache,
   useInkPictureConfig,
 } from "./InkPictureProvider.js";
-export {
-  clearImageCache,
-  getCachedImage,
-  getCacheSize,
-  setCachedImage,
-} from "./utils/imageCache.js";

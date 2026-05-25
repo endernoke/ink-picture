@@ -115,7 +115,7 @@ const usePosition = (
     let timeout: ReturnType<typeof setTimeout>;
 
     function schedule() {
-      timeout = setTimeout(tick, configRef.current.positionPollInterval);
+      timeout = setTimeout(tick, configRef.current.pollIntervalMs);
       timeout.unref();
     }
 

@@ -5,10 +5,10 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import supportsColor from "supports-color";
-import { type Config, setConfig } from "./config.js";
 import {
   defaultTerminalInfo,
   supportsITerm2,
@@ -16,9 +16,10 @@ import {
   TerminalInfoContext,
   useTerminalInfo,
 } from "./context/TerminalInfo.js";
+import { ImageCache } from "./utils/imageCache.js";
 import { queryTerminal } from "./utils/queryTerminal.js";
 
-function resolveNumber(
+function resolveConfig(
   key: string,
   propValue: number | undefined,
   fallback: number,
@@ -33,11 +34,15 @@ function resolveNumber(
   return fallback;
 }
 
-export type InkPictureConfig = Config;
+export interface InkPictureConfig {
+  pollIntervalMs: number;
+  paintIntervalMs: number;
+  cacheSize: number;
+}
 
 const defaultConfig: InkPictureConfig = {
-  pollInterval: 16,
-  positionPollInterval: 16,
+  pollIntervalMs: 16,
+  paintIntervalMs: 16,
   cacheSize: 10,
 };
 
@@ -47,18 +52,24 @@ export function useInkPictureConfig(): InkPictureConfig {
   return useContext(InkPictureConfigContext);
 }
 
+const ImageCacheContext = createContext<ImageCache | null>(null);
+
+export function useImageCache(): ImageCache | null {
+  return useContext(ImageCacheContext);
+}
+
 interface InkPictureProviderProps {
   children: React.ReactNode;
   config?: Partial<InkPictureConfig>;
   terminalInfo?: Partial<TerminalInfo>;
-  onDetection?: (terminalInfo: TerminalInfo) => void;
+  onTerminalInfoDetection?: (terminalInfo: TerminalInfo) => void;
 }
 
 export function InkPictureProvider({
   children,
   config,
   terminalInfo: overrides,
-  onDetection,
+  onTerminalInfoDetection,
 }: InkPictureProviderProps) {
   const { stdin, setRawMode } = useStdin();
   const [terminalInfo, setTerminalInfo] = useState<TerminalInfo | undefined>(
@@ -67,26 +78,25 @@ export function InkPictureProvider({
 
   const resolvedConfig: InkPictureConfig = useMemo(() => {
     const c: InkPictureConfig = {
-      pollInterval: resolveNumber(
+      pollIntervalMs: resolveConfig(
         "INK_PICTURE_POLL_INTERVAL",
-        config?.pollInterval,
+        config?.pollIntervalMs,
         16,
         1,
       ),
-      positionPollInterval: resolveNumber(
-        "INK_PICTURE_POSITION_POLL_INTERVAL",
-        config?.positionPollInterval,
+      paintIntervalMs: resolveConfig(
+        "INK_PICTURE_PAINT_INTERVAL",
+        config?.paintIntervalMs,
         16,
         1,
       ),
-      cacheSize: resolveNumber(
+      cacheSize: resolveConfig(
         "INK_PICTURE_CACHE_SIZE",
         config?.cacheSize,
         10,
         0,
       ),
     };
-    setConfig(c);
     return c;
   }, [config]);
 
@@ -130,16 +140,22 @@ export function InkPictureProvider({
         info.terminalHeight = info.cellHeight * process.stdout.rows;
       }
       setTerminalInfo(info);
-      onDetection?.(info);
+      onTerminalInfoDetection?.(info);
     };
     queryTerminalInfo();
 
     return () => controller.abort();
-  }, [stdin, setRawMode, overrides, onDetection]);
+  }, [stdin, setRawMode, overrides, onTerminalInfoDetection]);
 
   const resolvedInfo = useMemo(
     () => ({ ...defaultTerminalInfo, ...terminalInfo, ...overrides }),
     [terminalInfo, overrides],
+  );
+
+  const { current: cache } = useRef(
+    resolvedConfig.cacheSize === 0
+      ? null
+      : new ImageCache(resolvedConfig.cacheSize),
   );
 
   if (!terminalInfo && !overrides) {
@@ -148,9 +164,11 @@ export function InkPictureProvider({
 
   return (
     <InkPictureConfigContext.Provider value={resolvedConfig}>
-      <TerminalInfoContext.Provider value={resolvedInfo}>
-        {children}
-      </TerminalInfoContext.Provider>
+      <ImageCacheContext.Provider value={cache}>
+        <TerminalInfoContext.Provider value={resolvedInfo}>
+          {children}
+        </TerminalInfoContext.Provider>
+      </ImageCacheContext.Provider>
     </InkPictureConfigContext.Provider>
   );
 }
