@@ -1,11 +1,11 @@
 import { useStdout } from "ink";
 import React, { useMemo } from "react";
-import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import useBackgroundColor from "../../hooks/useBackgroundColor.js";
 import { useDirectRenderer } from "../../hooks/useDirectRenderer.js";
 import { useImage } from "../../hooks/useImage.js";
 import { useMeasuredSize } from "../../hooks/useMeasuredSize.js";
 import usePosition from "../../hooks/usePosition.js";
+import { useTerminalInfo } from "../../InkPictureProvider.js";
 import { renderSixel } from "../../renderers/sixel.js";
 import ImageBox from "../ImageBox.js";
 import type { ImageProps } from "./protocol.js";

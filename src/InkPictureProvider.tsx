@@ -6,10 +6,94 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import supportsColor from "supports-color";
-import { queryTerminal } from "../utils/queryTerminal.js";
+import { ImageCache } from "./utils/imageCache.js";
+import { queryTerminal } from "./utils/queryTerminal.js";
+
+function resolveConfig(
+  key: string,
+  propValue: number | undefined,
+  fallback: number,
+  min: number,
+): number {
+  const env = process.env[key];
+  if (env !== undefined) {
+    const n = parseInt(env, 10);
+    if (Number.isFinite(n) && n >= min) return n;
+  }
+  if (propValue !== undefined) return Math.max(min, propValue);
+  return fallback;
+}
+
+export interface InkPictureConfig {
+  pollIntervalMs: number;
+  paintIntervalMs: number;
+  cacheSize: number;
+}
+
+export const defaultConfig: InkPictureConfig = {
+  pollIntervalMs: 16,
+  paintIntervalMs: 16,
+  cacheSize: 10,
+};
+
+const InkPictureConfigContext = createContext<InkPictureConfig>(defaultConfig);
+
+export function useInkPictureConfig(): InkPictureConfig {
+  return useContext(InkPictureConfigContext);
+}
+
+const ImageCacheContext = createContext<ImageCache | null>(null);
+
+export function useImageCache(): ImageCache | null {
+  return useContext(ImageCacheContext);
+}
+
+export interface TerminalInfo {
+  /** Terminal viewport width in pixels */
+  terminalWidth: number;
+  /** Terminal viewport height in pixels */
+  terminalHeight: number;
+  /** Width of a single character cell in pixels */
+  cellWidth: number;
+  /** Height of a single character cell in pixels */
+  cellHeight: number;
+  /** Whether the terminal supports Unicode characters */
+  supportsUnicode: boolean;
+  /** Whether the terminal supports color output */
+  supportsColor: boolean;
+  /** Whether the terminal supports Sixel graphics protocol */
+  supportsSixelGraphics: boolean;
+  /** Whether the terminal supports Kitty graphics protocol */
+  supportsKittyGraphics: boolean;
+  /** Whether the terminal supports iTerm2 inline images */
+  supportsITerm2Graphics: boolean;
+}
+
+export const defaultTerminalInfo: TerminalInfo = {
+  terminalWidth: 6 * process.stdout.columns,
+  terminalHeight: 12 * process.stdout.rows,
+  cellWidth: 6,
+  cellHeight: 12,
+  supportsUnicode: false,
+  supportsColor: false,
+  supportsSixelGraphics: false,
+  supportsKittyGraphics: false,
+  supportsITerm2Graphics: false,
+};
+
+export const TerminalInfoContext = createContext<TerminalInfo | undefined>(
+  undefined,
+);
+
+export const useTerminalInfo = () => {
+  const terminalInfo = useContext(TerminalInfoContext);
+
+  return terminalInfo ?? defaultTerminalInfo;
+};
 
 function supportsITerm2(context?: {
   supportsSixelGraphics: boolean;
@@ -86,91 +170,47 @@ function supportsITerm2(context?: {
   return false;
 }
 
-export interface TerminalInfo {
-  /** Terminal viewport width in pixels */
-  terminalWidth: number;
-  /** Terminal viewport height in pixels */
-  terminalHeight: number;
-  /** Width of a single character cell in pixels */
-  cellWidth: number;
-  /** Height of a single character cell in pixels */
-  cellHeight: number;
-  /** Whether the terminal supports Unicode characters */
-  supportsUnicode: boolean;
-  /** Whether the terminal supports color output */
-  supportsColor: boolean;
-  /** Whether the terminal supports Sixel graphics protocol */
-  supportsSixelGraphics: boolean;
-  /** Whether the terminal supports Kitty graphics protocol */
-  supportsKittyGraphics: boolean;
-  /** Whether the terminal supports iTerm2 inline images */
-  supportsITerm2Graphics: boolean;
+interface InkPictureProviderProps {
+  children: React.ReactNode;
+  config?: Partial<InkPictureConfig>;
+  terminalInfo?: Partial<TerminalInfo>;
+  onTerminalInfoDetection?: (terminalInfo: TerminalInfo) => void;
 }
 
-export const defaultTerminalInfo: TerminalInfo = {
-  terminalWidth: 6 * process.stdout.columns,
-  terminalHeight: 12 * process.stdout.rows,
-  cellWidth: 6,
-  cellHeight: 12,
-  supportsUnicode: false,
-  supportsColor: false,
-  supportsSixelGraphics: false,
-  supportsKittyGraphics: false,
-  supportsITerm2Graphics: false,
-};
-
-/**
- * React context for sharing terminal information throughout the component tree.
- *
- * This context provides terminal dimensions and capabilities to child components.
- * It is undefined until the TerminalInfoProvider completes its initialization.
- * @todo maybe use a state management solution instead
- */
-export const TerminalInfoContext = createContext<TerminalInfo | undefined>(
-  undefined,
-);
-
-/**
- * TerminalInfo Provider Component
- *
- * This provider component must wrap any components that need terminal information,
- * including the Image component and any other components that depend on terminal
- * capabilities or dimensions.
- *
- * **Usage:**
- * ```tsx
- * import { TerminalInfoProvider } from './context/TerminalInfo.js';
- * import Image from './components/image/index.js';
- *
- * function App() {
- *   return (
- *     <TerminalInfoProvider>
- *       <Image src="image.jpg" />
- *       // Other components that need terminal info
- *     </TerminalInfoProvider>
- *   );
- * }
- * ```
- *
- * @param props - Component props
- * @param props.children - Child components that will have access to terminal info
- * @param props.terminalInfo - Optional terminal info overrides
- * @param props.onDetection - Optional callback that receives the detected terminal info once available
- * @returns JSX element providing terminal information context
- */
-export const TerminalInfoProvider = ({
+export function InkPictureProvider({
   children,
+  config,
   terminalInfo: overrides,
-  onDetection,
-}: {
-  children: React.ReactNode;
-  terminalInfo?: Partial<TerminalInfo>;
-  onDetection?: (terminalInfo: TerminalInfo) => void;
-}) => {
+  onTerminalInfoDetection,
+}: InkPictureProviderProps) {
   const { stdin, setRawMode } = useStdin();
   const [terminalInfo, setTerminalInfo] = useState<TerminalInfo | undefined>(
     undefined,
   );
+
+  const resolvedConfig: InkPictureConfig = useMemo(() => {
+    const c: InkPictureConfig = {
+      pollIntervalMs: resolveConfig(
+        "INK_PICTURE_POLL_INTERVAL",
+        config?.pollIntervalMs,
+        16,
+        1,
+      ),
+      paintIntervalMs: resolveConfig(
+        "INK_PICTURE_PAINT_INTERVAL",
+        config?.paintIntervalMs,
+        16,
+        1,
+      ),
+      cacheSize: resolveConfig(
+        "INK_PICTURE_CACHE_SIZE",
+        config?.cacheSize,
+        10,
+        0,
+      ),
+    };
+    return c;
+  }, [config]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -212,33 +252,37 @@ export const TerminalInfoProvider = ({
         info.terminalHeight = info.cellHeight * process.stdout.rows;
       }
       setTerminalInfo(info);
-      onDetection?.(info);
+      onTerminalInfoDetection?.(info);
     };
     queryTerminalInfo();
 
     return () => controller.abort();
-  }, [stdin, setRawMode, overrides, onDetection]);
+  }, [stdin, setRawMode, overrides, onTerminalInfoDetection]);
 
   const resolvedInfo = useMemo(
     () => ({ ...defaultTerminalInfo, ...terminalInfo, ...overrides }),
     [terminalInfo, overrides],
   );
 
-  return (
-    <TerminalInfoContext.Provider value={resolvedInfo}>
-      {terminalInfo ? children : null}
-    </TerminalInfoContext.Provider>
+  const { current: cache } = useRef(
+    resolvedConfig.cacheSize === 0
+      ? null
+      : new ImageCache(resolvedConfig.cacheSize),
   );
-};
 
-/**
- * Hook to access complete terminal information.
- *
- * @returns TerminalInfo object with dimensions and capabilities, or undefined during initialization
- * @throws Error if not used within TerminalInfoProvider context (after 2-second timeout)
- */
-export const useTerminalInfo = () => {
-  const terminalInfo = useContext(TerminalInfoContext);
+  if (!terminalInfo && !overrides) {
+    return null;
+  }
 
-  return terminalInfo ?? defaultTerminalInfo;
-};
+  return (
+    <InkPictureConfigContext.Provider value={resolvedConfig}>
+      <ImageCacheContext.Provider value={cache}>
+        <TerminalInfoContext.Provider value={resolvedInfo}>
+          {children}
+        </TerminalInfoContext.Provider>
+      </ImageCacheContext.Provider>
+    </InkPictureConfigContext.Provider>
+  );
+}
+
+export const TerminalInfoProvider = InkPictureProvider;

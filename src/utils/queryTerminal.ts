@@ -20,6 +20,19 @@ const ITERM_CELL_SIZE_REGEX = /ReportCellSize=([\d.]+);([\d.]+);([\d.]+)/;
 // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally parsing escape sequence responses
 const DEVICE_ATTRIBUTES_REGEX = /\x1b\[\?(\d+(?:;\d+)*)c/;
 
+const RESPONSE_PATTERNS_FOR_STRIPPING: RegExp[] = [
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally stripping escape sequence responses
+  /\x1b\[6;\d+;\d+;?t/g,
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally stripping escape sequence responses
+  /\x1b\[4;\d+;\d+;?t/g,
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally stripping escape sequence responses
+  /\x1b_Gi=31;.+?\x1b\\/g,
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally stripping escape sequence responses
+  /\x1b\]1337;ReportCellSize=[\d.]+;[\d.]+;[\d.]+\x07/g,
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally stripping escape sequence responses
+  /\x1b\[\?\d+(?:;\d+)*c/g,
+];
+
 export interface TerminalQueryResult {
   cellWidth: number | undefined;
   cellHeight: number | undefined;
@@ -36,16 +49,11 @@ export interface TerminalQueryResult {
  * Detect terminal capabilities by sending a batch of escape sequence queries
  * and accumulating the responses in a buffer matched by regex.
  *
- * All queries are written in a single synchronous `fs.writeSync` call,
- * wrapped in hidden mode to prevent visual artifacts. The Device Attributes
- * response (`\x1b[?Nc`) is used as a sentinel, with a 1000ms fallback timeout.
- *
- * @param stdin Ink's managed stdin from useStdin() — used for the data
- *   listener so that Ink tracks the stream usage lifecycle.
- * @param setRawMode Ink's managed setRawMode from useStdin() — used instead
- *   of process.stdin.setRawMode directly so that Ink tracks the raw mode
- *   transitions and can properly coordinate with useInput and signal handlers.
- * @param signal Optional AbortSignal for cleaning up on component unmount.
+ * The Device Attributes response (`\x1b[?Nc`) is used as a sentinel to signal
+ * end of terminal response, with a 1000ms fallback timeout.
+ * The function overrides `stdin.push`, preventing data from being picked up
+ * by Ink's `useInput` hook. `stdin.push` is restored on cleanup, and any
+ * user input during this period is pushed back into the stream.
  */
 export function queryTerminal(
   stdin: NodeJS.ReadStream,
@@ -91,6 +99,8 @@ export function queryTerminal(
       iterm2Scale: undefined,
     };
 
+    const origPush: typeof stdin.push = stdin.push.bind(stdin);
+
     const cleanup = () => {
       if (done) return;
       done = true;
@@ -98,8 +108,18 @@ export function queryTerminal(
         clearTimeout(timeoutId);
       }
       signal?.removeEventListener("abort", onAbort);
-      stdin.removeListener("data", onData);
+      stdin.push = origPush;
       setRawMode(false);
+
+      let filtered = buffer;
+      for (const regex of RESPONSE_PATTERNS_FOR_STRIPPING) {
+        filtered = filtered.replace(regex, "");
+      }
+
+      if (filtered.length > 0) {
+        stdin.push(filtered);
+      }
+
       resolve(result);
     };
 
@@ -111,8 +131,8 @@ export function queryTerminal(
 
     timeoutId = setTimeout(cleanup, 1000);
 
-    const onData = (data: Buffer) => {
-      buffer += data.toString();
+    const processChunk = (data: string) => {
+      buffer += data;
 
       if (!cellSizeReceived) {
         const match = buffer.match(CELL_SIZE_REGEX);
@@ -177,7 +197,11 @@ export function queryTerminal(
       }
     };
 
-    stdin.on("data", onData);
+    stdin.push = (chunk) => {
+      const str = Buffer.isBuffer(chunk) ? chunk.toString() : String(chunk);
+      processChunk(str);
+      return true;
+    };
 
     const query =
       HIDDEN_MODE +

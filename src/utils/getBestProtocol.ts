@@ -1,4 +1,4 @@
-import type { TerminalInfo } from "../context/TerminalInfo.js";
+import type { TerminalInfo } from "../InkPictureProvider.js";
 
 // Heuristic for selecting the best image protocol based on terminal capabilities
 function getBestProtocol(

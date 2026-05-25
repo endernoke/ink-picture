@@ -1,10 +1,10 @@
 import { useStdout } from "ink";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import { useImage } from "../../hooks/useImage.js";
 import { useMeasuredSize } from "../../hooks/useMeasuredSize.js";
 import usePosition from "../../hooks/usePosition.js";
 import { defaultVisibility } from "../../hooks/useVisibility.js";
+import { useTerminalInfo } from "../../InkPictureProvider.js";
 import {
   makeKittyDeletion,
   makeKittyPlacement,

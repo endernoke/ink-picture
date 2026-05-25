@@ -1,8 +1,8 @@
 import { Text } from "ink";
 import React, { useMemo } from "react";
-import { useTerminalInfo } from "../../context/TerminalInfo.js";
 import { useImage } from "../../hooks/useImage.js";
 import { useMeasuredSize } from "../../hooks/useMeasuredSize.js";
+import { useTerminalInfo } from "../../InkPictureProvider.js";
 import { renderAscii } from "../../renderers/ascii.js";
 import ImageBox from "../ImageBox.js";
 import type { ImageProps } from "./protocol.js";

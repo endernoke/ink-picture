@@ -1,5 +1,12 @@
 import type { DOMElement } from "ink";
-import { type RefObject, useCallback, useEffect, useState } from "react";
+import {
+  type RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useInkPictureConfig } from "../InkPictureProvider.js";
 
 export type Position = {
   /**
@@ -100,12 +107,27 @@ const usePosition = (
 
   // Poll to detect layout changes that happen without re-rendering
   // e.g. parent layout changes, where React bails out from re-rendering children
+  const config = useInkPictureConfig();
+  const configRef = useRef(config);
+  configRef.current = config;
+
   useEffect(() => {
-    const interval = setInterval(updatePosition, 16);
-    interval.unref();
+    let timeout: ReturnType<typeof setTimeout>;
+
+    function schedule() {
+      timeout = setTimeout(tick, configRef.current.pollIntervalMs);
+      timeout.unref();
+    }
+
+    function tick() {
+      updatePosition();
+      schedule();
+    }
+
+    schedule();
 
     return () => {
-      clearInterval(interval);
+      clearTimeout(timeout);
     };
   }, [updatePosition]);
 

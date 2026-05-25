@@ -1,13 +1,6 @@
 import type { Jimp } from "jimp";
 import type { JSX } from "react";
-/**
- * Props interface for image rendering components.
- *
- * **Important:** Components using these props must be rendered within a
- * `<TerminalInfoProvider>` context to access terminal capabilities and dimensions.
- *
- * @interface ImageProps
- */
+
 export interface ImageProps {
   /**
    * The source URL, file path or ArrayBuffer of the image to render
