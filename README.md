@@ -77,6 +77,10 @@ default: `"100%"`
 
 Dimensions of the image in terms of terminal cells. You can also set them as percentages to have them calculated based on the dimensions of the parent element. The image will be resized to fit the given dimensions.
 
+When using percentage dimensions, the parent `<Box>` must have a determinable size, otherwise the image size cannot be calculated.
+
+> The height of a cell is usually around twice its width in most terminal emulators, so set the width and height to a 2:1 ratio for a roughly square image.
+
 ```tsx
 <Image
   src="path/to/image.png"
@@ -98,9 +102,16 @@ Dimensions of the image in terms of terminal cells. You can also set them as per
   src="path/to/image.png"
   width={10}
 />
-```
 
-> The height of a cell is usually around twice its width in most terminal emulators, so set the width and height to a 2:1 ratio for a roughly square image.
+// This will not work because parent size is unbounded
+<Box>
+  <Image
+    src="path/to/image.png"
+    width="100%"
+    height="100%"
+  />
+</Box>
+```
 
 #### `alt` (optional)
 
@@ -171,6 +182,10 @@ See [Visibility](#visibility) for more on how visibility detection works.
 
 Wrapper component that Detects and provides terminal capabilities, as well as configuration and image caching to all descendant `Image` components.
 
+`TerminalInfoProvider` is exported as an alias for `InkPictureProvider` for backwards compatibility.
+
+Upon mounting, the provider queries the terminal for capabilities using escape sequences. This temporarily intercepts stdin for up to 1 second (usually much shorter). Any user keystrokes made during this window are safely buffered and re-injected into your app once detection completes.
+
 > [!TIP]
 > Move `InkPictureProvider` as close to the app's root as possible, i.e. wrap your entire app with it, so terminal capabilities are only detected once and provided to the entire app.
 
@@ -227,8 +242,6 @@ Callback invoked after terminal capability detection completes. Use this if you 
 ```
 
 </details>
-
-`TerminalInfoProvider` is exported as an alias for `InkPictureProvider` for backwards compatibility.
 
 ### Individual components for each protocol
 
@@ -333,8 +346,11 @@ When no `protocol` prop is specified, `Image` selects the best protocol automati
 3. When an image is partially or entirely outside the app or terminal viewport, it **dynamically switches** to a text-based protocol to avoid image dislocation.
 
 <details>
-  <summary>Note on sixel and iterm2</summary>
+  <summary>Note on graphical protocols (sixel, kitty, iterm2)</summary>
   Images rendered with sixel and iterm2 protocols may experience flickers during app re-renders. This is because Ink clears the terminal buffer before rendering each frame, which removes any sixel and iterm2 images, even if their positions are unchanged. The images are repainted in short intervals (default 16 ms), so they reappear almost instantly, but may still produce a short flicker. The chance of flickering may be reduced with a shorter `paintIntervalMs` at the cost of potential performance degradation.
+
+In addition, images rendered with sixel, kitty, and iterm2 protocols may not persist after app exit. This is because these renderers perform image cleanup upon unmount to prevent graphical artifacts, but they cannot distinguish between a regular React component unmount and an app exit. Issues and PRs addressing this bug are much appreciated.
+
 </details>
 
 ## Visibility
