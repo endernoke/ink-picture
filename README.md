@@ -100,7 +100,6 @@ Dimensions of the image in terms of terminal cells. You can also set them as per
 />
 ```
 
-> [!TIP]
 > The height of a cell is usually around twice its width in most terminal emulators, so set the width and height to a 2:1 ratio for a roughly square image.
 
 #### `alt` (optional)
@@ -278,7 +277,7 @@ Images can be rendered using one of the following protocols:
 
 | ID          | Name                            | Resolution   | Requirements                            |
 | ----------- | ------------------------------- | ------------ | --------------------------------------- |
-| `kitty`     | Kitty Graphics Protocol         | Full         | Supported terminal                      |
+| `kitty`     | Kitty Graphics Protocol         | Full         | Supported terminals                     |
 | `iterm2`    | iTerm2 Inline Images Protocol   | Full         | Supported terminals                     |
 | `sixel`     | Sixel                           | Full         | Sixel support (device attribute `4`)    |
 | `halfBlock` | Colored unicode half-blocks (▄) | 1x2 per cell | Unicode + color support                 |
