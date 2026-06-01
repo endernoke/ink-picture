@@ -1,8 +1,9 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Box, render, Text, useApp, useInput } from "ink";
+import { Box, render, Text } from "ink";
 import React from "react";
 import Image, {
+  ImageProtocolName,
   InkPictureProvider,
   type TerminalInfo,
   useTerminalInfo,
@@ -11,15 +12,11 @@ import Image, {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function getImagePath(): string {
-  return `${__dirname}/images/full.png`;
-}
-
 type ProtocolConfig = {
   name: string;
   protocol: React.ComponentProps<typeof Image>["protocol"];
   requirements: string;
-  getSupportStatus: (caps: TerminalInfo) => {
+  getSupportStatus: (caps: TerminalInfo | undefined) => {
     supported: boolean;
   };
 };
@@ -36,7 +33,7 @@ const protocols: ProtocolConfig[] = [
     protocol: "halfBlock",
     requirements: "Unicode + Color support",
     getSupportStatus: (caps) => ({
-      supported: caps?.supportsUnicode && caps?.supportsColor,
+      supported: (caps?.supportsUnicode && caps?.supportsColor) || false,
     }),
   },
   {
@@ -44,7 +41,7 @@ const protocols: ProtocolConfig[] = [
     protocol: "braille",
     requirements: "Unicode support",
     getSupportStatus: (caps) => ({
-      supported: caps?.supportsUnicode,
+      supported: caps?.supportsUnicode || false,
     }),
   },
   {
@@ -52,7 +49,7 @@ const protocols: ProtocolConfig[] = [
     protocol: "sixel",
     requirements: "Sixel-compatible terminal",
     getSupportStatus: (caps) => ({
-      supported: caps?.supportsSixelGraphics,
+      supported: caps?.supportsSixelGraphics || false,
     }),
   },
   {
@@ -60,7 +57,7 @@ const protocols: ProtocolConfig[] = [
     protocol: "iterm2",
     requirements: "iTerm2 or compatible terminal",
     getSupportStatus: (caps) => ({
-      supported: caps?.supportsITerm2Graphics,
+      supported: caps?.supportsITerm2Graphics || false,
     }),
   },
   {
@@ -68,36 +65,35 @@ const protocols: ProtocolConfig[] = [
     protocol: "kitty",
     requirements: "Kitty or compatible terminal",
     getSupportStatus: (caps) => ({
-      supported: caps?.supportsKittyGraphics,
+      supported: caps?.supportsKittyGraphics || false,
     }),
   },
 ];
 
 function ProtocolDemo({ config }: { config: ProtocolConfig }) {
   const terminalInfo = useTerminalInfo();
-  // biome-ignore lint/style/noNonNullAssertion: monkey patch
-  const supportInfo = config.getSupportStatus(terminalInfo!);
+  const supportInfo = config.getSupportStatus(terminalInfo);
 
   return (
-    <Box flexDirection="column" width={26}>
-      <Text bold color="cyan">
-        {config.name}
-      </Text>
-      <Text dimColor>Requirements: {config.requirements}</Text>
-      <Text color={supportInfo.supported ? "green" : "red"}>
-        {supportInfo.supported ? "✓ Supported" : "✗ Not Supported"}
-      </Text>
+    <Box flexDirection="column" width={22}>
+      <Box height={4} flexDirection="column">
+        <Text bold color="cyan">
+          {config.name}
+        </Text>
+        <Text dimColor>Requirements: {config.requirements}</Text>
+        <Text color={supportInfo.supported ? "green" : "red"}>
+          {supportInfo.supported ? "✓ Supported" : "✗ Not Supported"}
+        </Text>
+      </Box>
       <Box
         borderStyle="single"
         borderColor={supportInfo.supported ? "green" : "red"}
-        width={26}
-        height={14}
+        width={22}
+        height={12}
       >
         {supportInfo.supported ? (
           <Image
-            src={getImagePath()}
-            // width={24}
-            // height={12}
+            src={`${__dirname}/images/house.png`}
             protocol={config.protocol}
             alt={`${config.name} demo`}
           />
@@ -117,32 +113,30 @@ function ProtocolDemo({ config }: { config: ProtocolConfig }) {
 }
 
 function ProtocolShowcase() {
-  const { exit } = useApp();
-  useInput((input, key) => {
-    if (key.ctrl && input === "c") {
-      exit();
-    }
-  });
-
   return (
     <InkPictureProvider>
       <Box flexDirection="column">
-        <Text bold color="white" backgroundColor="blue">
-          🖼️ ink-picture Showcase
-        </Text>
         <Box marginBottom={1}>
-          <Text dimColor>Press Ctrl+C to exit</Text>
+          <Text bold color="white" backgroundColor="blue">
+            🖼️ ink-picture Showcase
+          </Text>
         </Box>
 
-        <Box flexDirection="column" marginBottom={1}>
+        <Box flexDirection="column">
           <Box flexDirection="row" gap={1}>
             {protocols.slice(0, 3).map((config) => (
-              <ProtocolDemo key={config.protocol} config={config} />
+              <ProtocolDemo
+                key={config.protocol as ImageProtocolName}
+                config={config}
+              />
             ))}
           </Box>
           <Box flexDirection="row" gap={1}>
             {protocols.slice(3).map((config) => (
-              <ProtocolDemo key={config.protocol} config={config} />
+              <ProtocolDemo
+                key={config.protocol as ImageProtocolName}
+                config={config}
+              />
             ))}
           </Box>
         </Box>
