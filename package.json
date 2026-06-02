@@ -20,7 +20,7 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "format": "biome format --write",
-    "example": "node --loader=ts-node/esm --no-warnings example/image.tsx",
+    "example": "node --loader=ts-node/esm --no-warnings examples/protocols.tsx",
     "build": "tsc",
     "prepare": "husky",
     "lint": "biome check",

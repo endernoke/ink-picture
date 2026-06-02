@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fetchImage } from "../../src/utils/image.js";
 
-const sampleImage = "example/images/full.png";
+const sampleImage = "examples/images/house.png";
 const sampleImagePath = resolve(process.cwd(), sampleImage);
 
 let server: ReturnType<typeof createServer>;
