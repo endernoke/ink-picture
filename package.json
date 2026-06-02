@@ -17,7 +17,7 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.5.1",
   "scripts": {
     "format": "biome format --write",
     "example": "node --loader=ts-node/esm --no-warnings examples/protocols.tsx",
@@ -49,33 +49,33 @@
     "terminal"
   ],
   "devDependencies": {
-    "@biomejs/biome": "2.4.7",
-    "@playwright/test": "^1.59.1",
-    "@types/node": "^25.3.0",
+    "@biomejs/biome": "2.4.16",
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.9.1",
     "@types/node-fetch": "^2.6.13",
-    "@types/react": "^19.1.12",
+    "@types/react": "^19.2.15",
     "@xterm/addon-image": "0.10.0-beta.197",
     "@xterm/xterm": "6.1.0-beta.197",
     "husky": "^9.1.7",
-    "ink": "^7.0.0",
-    "lint-staged": "^16.1.6",
-    "node-pty": "^1.0.0",
-    "react": "^19.1.1",
+    "ink": "^7.0.5",
+    "lint-staged": "^17.0.7",
+    "node-pty": "^1.1.0",
+    "react": "^19.2.6",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2",
-    "vitest": "^4.1.5"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   },
   "peerDependencies": {
     "ink": ">=5",
     "react": ">=18"
   },
   "dependencies": {
-    "chalk": "^5.6.0",
+    "chalk": "^5.6.2",
     "is-unicode-supported": "^2.1.0",
     "iterm2-version": "^6.0.0",
     "jimp": "^1.6.1",
     "node-fetch": "^3.3.2",
     "sixel": "^0.16.0",
-    "supports-color": "^10.2.0"
+    "supports-color": "^10.2.2"
   }
 }
