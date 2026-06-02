@@ -1,17 +1,15 @@
 import { render, Text, useApp, useInput } from "ink";
 import React from "react";
-import { TerminalInfoProvider } from "../../src/context/TerminalInfo.js";
+import { TerminalInfoProvider } from "../../../src";
 
 function UserInput() {
   const { exit } = useApp();
 
-  useInput((input) => {
-    if (input === "george") {
+  useInput((input, key) => {
+    if (input === "c" && key.ctrl) {
       exit();
       return;
     }
-
-    throw new Error("Crash");
   });
 
   return (
@@ -21,7 +19,7 @@ function UserInput() {
   );
 }
 
-const app = render(<UserInput />);
+const app = render(<UserInput />, { exitOnCtrlC: false });
 
 await app.waitUntilExit();
 console.log("exited");

@@ -1,33 +1,55 @@
+import { fileURLToPath } from "node:url";
+import { Jimp } from "jimp";
 import fetch from "node-fetch";
-import sharp from "sharp";
+
+export type JimpImage = Awaited<ReturnType<typeof Jimp.read>>;
+
+export interface ImageOutputInfo {
+  width: number;
+  height: number;
+  channels: number;
+  size?: number;
+}
 
 export async function fetchImage(
-  src: string,
-  allowPartial = false,
-): Promise<sharp.Sharp | undefined> {
+  src: Parameters<typeof Jimp.read>[0],
+): Promise<JimpImage | undefined> {
   try {
-    let imageBuffer: Buffer;
-    // supports partially loaded image reading
-    const options: sharp.SharpOptions = {};
-    if (allowPartial) {
-      options.failOn = "none";
+    if (typeof src === "string" && src.startsWith("file://")) {
+      return await Jimp.read(fileURLToPath(src));
     }
-    if (src.startsWith("http")) {
-      const response = await fetch(src);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
-      }
-      imageBuffer = Buffer.from(await response.arrayBuffer());
-    } else {
-      // Assume local file path
-      imageBuffer = await sharp(src, options).toBuffer();
-    }
-
-    return sharp(imageBuffer, options);
+    return await Jimp.read(src);
   } catch {
-    // console.error('Failed to fetch image:', error);
     return undefined;
   }
+}
+
+export async function getRawPixels(
+  image: JimpImage,
+): Promise<{ data: Buffer; info: ImageOutputInfo }> {
+  return {
+    data: image.bitmap.data,
+    info: {
+      width: image.bitmap.width,
+      height: image.bitmap.height,
+      channels: 4,
+    },
+  };
+}
+
+export async function getPngBuffer(
+  image: JimpImage,
+): Promise<{ data: Buffer; info: ImageOutputInfo }> {
+  const buffer = await image.getBuffer("image/png");
+  return {
+    data: buffer,
+    info: {
+      width: image.bitmap.width,
+      height: image.bitmap.height,
+      channels: 4,
+      size: buffer.length,
+    },
+  };
 }
 
 export function calculateImageSize({

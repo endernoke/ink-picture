@@ -1,6 +1,6 @@
 {
   "name": "ink-picture",
-  "version": "1.3.5",
+  "version": "2.0.0",
   "description": "Better image component for Ink CLI/TUIs",
   "license": "MIT",
   "repository": "https://github.com/endernoke/ink-picture",
@@ -17,14 +17,16 @@
   "engines": {
     "node": ">=18"
   },
+  "packageManager": "pnpm@11.5.1",
   "scripts": {
     "format": "biome format --write",
-    "example": "node --loader=ts-node/esm --no-warnings example/image.tsx",
-    "test": "tsc --noEmit && biome ci && FORCE_COLOR=1 ava",
+    "example": "node --loader=ts-node/esm --no-warnings examples/protocols.tsx",
     "build": "tsc",
     "prepare": "husky",
-    "pretest": "tsc",
-    "lint": "biome lint"
+    "lint": "biome check",
+    "test:unit": "vitest run -c tests/vitest/vitest.config.ts",
+    "test:browser": "playwright test -c tests/playwright/playwright.config.ts",
+    "test": "tsc --noEmit && biome ci && pnpm test:unit && pnpm test:browser"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md}": [
@@ -47,39 +49,33 @@
     "terminal"
   ],
   "devDependencies": {
-    "@biomejs/biome": "2.4.12",
-    "@types/node": "^25.3.0",
+    "@biomejs/biome": "2.4.16",
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.9.1",
     "@types/node-fetch": "^2.6.13",
-    "@types/react": "^19.1.12",
-    "ava": "^7.0.0",
+    "@types/react": "^19.2.15",
+    "@xterm/addon-image": "0.10.0-beta.197",
+    "@xterm/xterm": "6.1.0-beta.197",
     "husky": "^9.1.7",
-    "ink": "^7.0.1",
-    "ink-testing-library": "^4.0.0",
-    "lint-staged": "^16.1.6",
-    "node-pty": "^1.0.0",
-    "react": "^19.1.1",
+    "ink": "^7.0.5",
+    "lint-staged": "^17.0.7",
+    "node-pty": "^1.1.0",
+    "react": "^19.2.6",
     "ts-node": "^10.9.2",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
   },
   "peerDependencies": {
     "ink": ">=5",
     "react": ">=18"
   },
-  "ava": {
-    "workerThreads": false,
-    "extensions": {
-      "ts": "module",
-      "tsx": "module"
-    },
-    "nodeArguments": ["--loader=ts-node/esm"]
-  },
   "dependencies": {
-    "chalk": "^5.6.0",
+    "chalk": "^5.6.2",
     "is-unicode-supported": "^2.1.0",
     "iterm2-version": "^6.0.0",
+    "jimp": "^1.6.1",
     "node-fetch": "^3.3.2",
-    "sharp": "^0.34.3",
     "sixel": "^0.16.0",
-    "supports-color": "^10.2.0"
+    "supports-color": "^10.2.2"
   }
 }

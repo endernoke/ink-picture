@@ -1,28 +1,18 @@
+import type { Jimp } from "jimp";
 import type { JSX } from "react";
-/**
- * Props interface for image rendering components.
- *
- * **Important:** Components using these props must be rendered within a
- * `<TerminalInfoProvider>` context to access terminal capabilities and dimensions.
- *
- * @interface ImageProps
- */
+
 export interface ImageProps {
   /**
-   * The source URL or file path of the image to render
-   * Supports all image formats supported by sharp (JPEG, PNG, WebP, AVIF, GIF, SVG, TIFF)
+   * The source URL, file path or ArrayBuffer of the image to render
+   * Supports all image formats supported by jimp (JPEG, PNG, WebP, GIF, BMP, TIFF).
    */
-  src: string;
-  /** Optional width constraint in terminal characters/cells */
-  width?: number;
-  /** Optional height constraint in terminal characters/cells */
-  height?: number;
+  src: Parameters<typeof Jimp.read>[0];
+  /** Width in terminal cells or a percentage */
+  width: number | string;
+  /** Height in terminal cells or a percentage */
+  height: number | string;
   /** Alternative text displayed while loading or on error */
   alt?: string;
-  /** Supports partially loaded image reading */
-  allowPartial?: boolean;
-  /** Callback function to notify parent component about protocol support detection */
-  onSupportDetected: (isSupported: boolean) => void;
 }
 
 /**
@@ -34,8 +24,8 @@ export interface ImageProps {
  * @interface ImageProtocol
  */
 export interface ImageProtocol {
-  /** Function that renders the image using this protocol */
-  render(props: ImageProps): JSX.Element | null;
   /** Unique identifier for this protocol */
   name: string;
+  /** Function that renders the image using this protocol */
+  render(props: ImageProps): JSX.Element | null;
 }

@@ -1,0 +1,448 @@
+import { test as base, expect } from "@playwright/test";
+import { createTestContext, runFixture, TestContext } from "./terminal";
+
+function timeout(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+type ImageTestFixtures = {
+  ctx: TestContext;
+};
+
+const test = base.extend<ImageTestFixtures>({
+  ctx: async ({ browser }, use: (context: TestContext) => Promise<void>) => {
+    const context = await createTestContext(browser);
+    await use(context);
+    await context.page.close();
+  },
+});
+
+function checkCellsHaveGraphics(
+  cells: { x: number; y: number; hasGraphic: boolean }[],
+): boolean {
+  for (const cell of cells) {
+    if (!cell.hasGraphic) {
+      return false;
+    }
+  }
+  return true;
+}
+
+const advancedImageProtocols = ["sixel", "iterm2", "kitty"];
+
+test.describe("basic rendering", () => {
+  test("renders standalone image", async ({ ctx }) => {
+    const ps = await runFixture(
+      "simple-image.tsx",
+      [
+        "--src",
+        "../../examples/images/house.png",
+        "--width",
+        "4",
+        "--height",
+        "2",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput).toMatch(/^\u2584{4}\s*\n\u2584{4}\s*$/);
+  });
+
+  test("shows fallback on load failure", async ({ ctx }) => {
+    const ps = await runFixture(
+      "simple-image.tsx",
+      ["--src", "non-existent.png", "--width", "12", "--height", "6"],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput).toContain("Load failed");
+  });
+});
+
+test.describe("advanced protocols", () => {
+  for (const protocol of advancedImageProtocols) {
+    test(`renders ${protocol} image`, async ({ ctx }) => {
+      const ps = await runFixture(
+        "simple-image.tsx",
+        [
+          "--src",
+          "../../examples/images/house.png",
+          "--protocol",
+          protocol,
+          "--keepalive",
+        ],
+        ctx.terminalProxy,
+      );
+      await timeout(4000);
+      await expect
+        .poll(
+          async () => {
+            const cells = await ctx.terminalProxy.cellsContainGraphics(
+              0,
+              0,
+              4,
+              2,
+            );
+            return checkCellsHaveGraphics(cells);
+          },
+          {
+            intervals: [1000],
+            timeout: 10000,
+          },
+        )
+        .toBe(true);
+      await ps.kill();
+    });
+  }
+});
+
+// Skipping for now because there's currently a bug in xterm.js that does not overwrite image with text
+// See https://github.com/xtermjs/xterm.js/issues/5860
+test.describe
+  .skip("image persistence after exit", () => {
+    test.describe.configure({
+      retries: 2,
+    });
+
+    for (const protocol of advancedImageProtocols) {
+      test.fail(`${protocol}`, async ({ ctx }) => {
+        const ps = await runFixture(
+          "simple-image.tsx",
+          ["--src", "../../examples/images/house.png", "--protocol", protocol],
+          ctx.terminalProxy,
+        );
+        await ps.waitForExit();
+        const cells = await ctx.terminalProxy.cellsContainGraphics(0, 0, 4, 2);
+        for (const cell of cells) {
+          await expect(
+            cell.hasGraphic,
+            `Cell (${cell.x}, ${cell.y}) should contain graphics`,
+          ).toBe(true);
+        }
+      });
+    }
+  });
+
+test.describe("percentage sizing", () => {
+  test("100% size image", async ({ ctx }) => {
+    const ps = await runFixture(
+      "percentage-size.tsx",
+      [
+        "--src",
+        "../../examples/images/house.png",
+        "--width",
+        "100%",
+        "--height",
+        "100%",
+        "--parentWidth",
+        "4",
+        "--parentHeight",
+        "2",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // expect 2 lines of 4 half-block chars each
+    expect(bufferOutput).toMatch(/^\u2584{4}[ \t]*(\n\u2584{4}[ \t]*){1}\s*$/);
+  });
+
+  test("50% size image", async ({ ctx }) => {
+    const ps = await runFixture(
+      "percentage-size.tsx",
+      [
+        "--src",
+        "../../examples/images/house.png",
+        "--width",
+        "50%",
+        "--height",
+        "50%",
+        "--parentWidth",
+        "4",
+        "--parentHeight",
+        "2",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // expect 1 line of 2 half-block chars
+    expect(bufferOutput).toMatch(/^\u2584{2}\s*$/);
+  });
+
+  test("percentage width", async ({ ctx }) => {
+    const ps = await runFixture(
+      "percentage-size.tsx",
+      [
+        "--src",
+        "../../examples/images/house.png",
+        "--width",
+        "100%",
+        "--height",
+        "2",
+        "--parentWidth",
+        "4",
+        "--parentHeight",
+        "2",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // expect 2 lines of 4 half-block chars each, since height is fixed at 2 lines but width is 100% of parent
+    expect(bufferOutput).toMatch(/^\u2584{4}\s*\n\u2584{4}\s*$/);
+  });
+
+  test("percentage height", async ({ ctx }) => {
+    const ps = await runFixture(
+      "percentage-size.tsx",
+      [
+        "--src",
+        "../../examples/images/house.png",
+        "--width",
+        "4",
+        "--height",
+        "100%",
+        "--parentWidth",
+        "4",
+        "--parentHeight",
+        "2",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // expect 2 lines of 4 half-block chars each, since width is fixed at 4 chars but height is 100% of parent
+    expect(bufferOutput).toMatch(/^\u2584{4}\s*\n\u2584{4}\s*$/);
+  });
+});
+
+const verticalOffsetAppHeightCases = [
+  {
+    label: "app height < terminal height",
+    appHeight: "4",
+    expectedImageLocation: [0, 1, 4, 2],
+  },
+  {
+    label: "app height >= terminal height",
+    appHeight: "50",
+    expectedImageLocation: [0, 47, 4, 2],
+  },
+];
+
+test.describe("vertical offset", () => {
+  for (const protocol of advancedImageProtocols) {
+    for (const {
+      label,
+      appHeight,
+      expectedImageLocation,
+    } of verticalOffsetAppHeightCases) {
+      test(`${protocol} image with ${label}`, async ({ ctx }) => {
+        const ps = await runFixture(
+          "vertical-offset.tsx",
+          [
+            "--src",
+            "../../examples/images/house.png",
+            "--protocol",
+            protocol,
+            "--appHeight",
+            appHeight,
+          ],
+          ctx.terminalProxy,
+        );
+        await timeout(4000);
+        await expect
+          .poll(
+            async () => {
+              const cells = await ctx.terminalProxy.cellsContainGraphics(
+                expectedImageLocation[0],
+                expectedImageLocation[1],
+                expectedImageLocation[2],
+                expectedImageLocation[3],
+              );
+              return checkCellsHaveGraphics(cells);
+            },
+            {
+              intervals: [1000],
+              timeout: 10000,
+            },
+          )
+          .toBe(true);
+        await ps.kill();
+      });
+    }
+  }
+});
+
+// Skipping for now because there's currently a bug in xterm.js that does not overwrite image with text
+// See https://github.com/xtermjs/xterm.js/issues/5860
+test.describe
+  .skip("background color", () => {
+    for (const protocol of ["sixel", "iterm2"]) {
+      test(`restores background color after ${protocol} image cleanup`, async ({
+        ctx,
+      }) => {
+        const ps = await runFixture(
+          "background-color.tsx",
+          [
+            "--src",
+            "../../examples/images/house.png",
+            "--protocol",
+            protocol,
+            "--bgColor",
+            "red",
+          ],
+          ctx.terminalProxy,
+        );
+        await ps.waitForExit();
+        const cells = await ctx.terminalProxy.getCellsBgColor(0, 0, 4, 2);
+        for (const cell of cells) {
+          await expect(
+            cell.color === 0xff0000,
+            `Cell (${cell.x}, ${cell.y}) should have the correct background color`,
+          ).toBe(true);
+        }
+      });
+    }
+  });
+
+test("renders with default sizing", async ({ ctx }) => {
+  const ps = await runFixture(
+    "auto-image.tsx",
+    ["--src", "../../examples/images/house.png"],
+    ctx.terminalProxy,
+  );
+  await ps.waitForExit();
+  const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+  expect(bufferOutput.length).toBeGreaterThan(0);
+});
+
+test.describe("useVisibility", () => {
+  test("renders with graphical protocol when image is fully visible", async ({
+    ctx,
+  }) => {
+    const ps = await runFixture(
+      "visibility.tsx",
+      ["--src", "../../examples/images/house.png", "--appHeight", "50"],
+      ctx.terminalProxy,
+    );
+    await ps.waitUntilReady();
+    await timeout(4000);
+    const cells = await ctx.terminalProxy.cellsContainGraphics(0, 0, 4, 2);
+    for (const cell of cells) {
+      await expect(
+        cell.hasGraphic,
+        `Cell (${cell.x}, ${cell.y}) should contain graphics`,
+      ).toBe(true);
+    }
+  });
+
+  test("falls back to text protocol when image is partially visible in waterfall CLI", async ({
+    ctx,
+  }) => {
+    const ps = await runFixture(
+      "visibility.tsx",
+      ["--src", "../../examples/images/house.png", "--appHeight", "51"],
+      ctx.terminalProxy,
+    );
+    await ps.waitUntilReady();
+    await timeout(4000);
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput).toMatch(/^\u2584{4}__READY__\s*\n\u2584{4}\s*$/);
+  });
+
+  test("falls back to text protocol when image is hidden in waterfall CLI", async ({
+    ctx,
+  }) => {
+    const ps = await runFixture(
+      "visibility.tsx",
+      ["--src", "../../examples/images/house.png", "--appHeight", "52"],
+      ctx.terminalProxy,
+    );
+    await ps.waitUntilReady();
+    await timeout(4000);
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput).toMatch(/^\u2584{4}__READY__\s*\n\u2584{4}\s*$/);
+  });
+
+  test("falls back to text protocol when image is partially visible in TUI", async ({
+    ctx,
+  }) => {
+    const ps = await runFixture(
+      "visibility.tsx",
+      ["--src", "../../examples/images/house.png", "--appHeight", "2"],
+      ctx.terminalProxy,
+    );
+    await ps.waitUntilReady();
+    await timeout(4000);
+    await ps.write("w");
+    await timeout(1000);
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // top part of image should be clipped
+    expect(bufferOutput).toMatch(/^\u2584{4}__READY__\s*$/);
+
+    for (let i = 0; i < 2; i++) {
+      await ps.write("s");
+      await timeout(100);
+    }
+    await timeout(1000);
+    const bufferOutput2 = await ctx.terminalProxy.getBufferAsString();
+    // Bottom half of image should be clipped
+    expect(bufferOutput2).toMatch(/^ {4}__READY__\s*\n\u2584{4}\s*$/);
+  });
+
+  test("respects custom getVisibility logic", async ({ ctx }) => {
+    const ps = await runFixture(
+      "visibility.tsx",
+      [
+        "--src",
+        "../../examples/images/house.png",
+        "--appHeight",
+        "2",
+        "--useCustomVisibility",
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitUntilReady();
+    await timeout(4000);
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    // Default visibility would be "full" since image fits within terminal,
+    // but custom callback forces it to be treated as "partial", thus the text fallback is rendered instead
+    expect(bufferOutput).toMatch(/^\u2584{4}__READY__\s*\n\u2584{4}\s*$/);
+  });
+});
+
+test.describe("protocol hints", () => {
+  test("string protocol forces that protocol always", async ({ ctx }) => {
+    const ps = await runFixture(
+      "protocol-hint.tsx",
+      ["--src", "../../examples/images/house.png", "--protocol", "ascii"],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput).toMatch(
+      /^[A-Za-z0-9~`!@#$%^&*()\-_=+\\|[{\]}'";:/?.>,<]{4}\s*\n[A-Za-z0-9~`!@#$%^&*()\-_=+\\|[{\]}'";:/?.>,<]{4}\s*$/,
+    );
+  });
+
+  test("object hint uses the specified protocol for full visibility", async ({
+    ctx,
+  }) => {
+    const ps = await runFixture(
+      "protocol-hint.tsx",
+      [
+        "--src",
+        "../../examples/images/house.png",
+        "--protocol",
+        JSON.stringify({ full: "halfBlock" }),
+      ],
+      ctx.terminalProxy,
+    );
+    await ps.waitForExit();
+    const bufferOutput = await ctx.terminalProxy.getBufferAsString();
+    expect(bufferOutput).toMatch(/^\u2584{4}\s*\n\u2584{4}\s*$/);
+  });
+});
