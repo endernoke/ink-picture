@@ -36,7 +36,7 @@ test.describe("basic rendering", () => {
       "simple-image.tsx",
       [
         "--src",
-        "../../example/images/full.png",
+        "../../examples/images/house.png",
         "--width",
         "4",
         "--height",
@@ -68,7 +68,7 @@ test.describe("advanced protocols", () => {
         "simple-image.tsx",
         [
           "--src",
-          "../../example/images/full.png",
+          "../../examples/images/house.png",
           "--protocol",
           protocol,
           "--keepalive",
@@ -110,7 +110,7 @@ test.describe
       test.fail(`${protocol}`, async ({ ctx }) => {
         const ps = await runFixture(
           "simple-image.tsx",
-          ["--src", "../../example/images/full.png", "--protocol", protocol],
+          ["--src", "../../examples/images/house.png", "--protocol", protocol],
           ctx.terminalProxy,
         );
         await ps.waitForExit();
@@ -131,7 +131,7 @@ test.describe("percentage sizing", () => {
       "percentage-size.tsx",
       [
         "--src",
-        "../../example/images/full.png",
+        "../../examples/images/house.png",
         "--width",
         "100%",
         "--height",
@@ -154,7 +154,7 @@ test.describe("percentage sizing", () => {
       "percentage-size.tsx",
       [
         "--src",
-        "../../example/images/full.png",
+        "../../examples/images/house.png",
         "--width",
         "50%",
         "--height",
@@ -177,7 +177,7 @@ test.describe("percentage sizing", () => {
       "percentage-size.tsx",
       [
         "--src",
-        "../../example/images/full.png",
+        "../../examples/images/house.png",
         "--width",
         "100%",
         "--height",
@@ -200,7 +200,7 @@ test.describe("percentage sizing", () => {
       "percentage-size.tsx",
       [
         "--src",
-        "../../example/images/full.png",
+        "../../examples/images/house.png",
         "--width",
         "4",
         "--height",
@@ -244,7 +244,7 @@ test.describe("vertical offset", () => {
           "vertical-offset.tsx",
           [
             "--src",
-            "../../example/images/full.png",
+            "../../examples/images/house.png",
             "--protocol",
             protocol,
             "--appHeight",
@@ -288,7 +288,7 @@ test.describe
           "background-color.tsx",
           [
             "--src",
-            "../../example/images/full.png",
+            "../../examples/images/house.png",
             "--protocol",
             protocol,
             "--bgColor",
@@ -311,7 +311,7 @@ test.describe
 test("renders with default sizing", async ({ ctx }) => {
   const ps = await runFixture(
     "auto-image.tsx",
-    ["--src", "../../example/images/full.png"],
+    ["--src", "../../examples/images/house.png"],
     ctx.terminalProxy,
   );
   await ps.waitForExit();
@@ -325,7 +325,7 @@ test.describe("useVisibility", () => {
   }) => {
     const ps = await runFixture(
       "visibility.tsx",
-      ["--src", "../../example/images/full.png", "--appHeight", "50"],
+      ["--src", "../../examples/images/house.png", "--appHeight", "50"],
       ctx.terminalProxy,
     );
     await ps.waitUntilReady();
@@ -344,7 +344,7 @@ test.describe("useVisibility", () => {
   }) => {
     const ps = await runFixture(
       "visibility.tsx",
-      ["--src", "../../example/images/full.png", "--appHeight", "51"],
+      ["--src", "../../examples/images/house.png", "--appHeight", "51"],
       ctx.terminalProxy,
     );
     await ps.waitUntilReady();
@@ -358,7 +358,7 @@ test.describe("useVisibility", () => {
   }) => {
     const ps = await runFixture(
       "visibility.tsx",
-      ["--src", "../../example/images/full.png", "--appHeight", "52"],
+      ["--src", "../../examples/images/house.png", "--appHeight", "52"],
       ctx.terminalProxy,
     );
     await ps.waitUntilReady();
@@ -372,7 +372,7 @@ test.describe("useVisibility", () => {
   }) => {
     const ps = await runFixture(
       "visibility.tsx",
-      ["--src", "../../example/images/full.png", "--appHeight", "2"],
+      ["--src", "../../examples/images/house.png", "--appHeight", "2"],
       ctx.terminalProxy,
     );
     await ps.waitUntilReady();
@@ -398,7 +398,7 @@ test.describe("useVisibility", () => {
       "visibility.tsx",
       [
         "--src",
-        "../../example/images/full.png",
+        "../../examples/images/house.png",
         "--appHeight",
         "2",
         "--useCustomVisibility",
@@ -418,7 +418,7 @@ test.describe("protocol hints", () => {
   test("string protocol forces that protocol always", async ({ ctx }) => {
     const ps = await runFixture(
       "protocol-hint.tsx",
-      ["--src", "../../example/images/full.png", "--protocol", "ascii"],
+      ["--src", "../../examples/images/house.png", "--protocol", "ascii"],
       ctx.terminalProxy,
     );
     await ps.waitForExit();
@@ -435,7 +435,7 @@ test.describe("protocol hints", () => {
       "protocol-hint.tsx",
       [
         "--src",
-        "../../example/images/full.png",
+        "../../examples/images/house.png",
         "--protocol",
         JSON.stringify({ full: "halfBlock" }),
       ],
