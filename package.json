@@ -49,13 +49,13 @@
     "terminal"
   ],
   "devDependencies": {
-    "@biomejs/biome": "2.4.16",
+    "@biomejs/biome": "2.5.0",
     "@playwright/test": "^1.60.0",
     "@types/node": "^25.9.1",
     "@types/node-fetch": "^2.6.13",
     "@types/react": "^19.2.15",
-    "@xterm/addon-image": "0.10.0-beta.197",
-    "@xterm/xterm": "6.1.0-beta.197",
+    "@xterm/addon-image": "0.10.0-beta.287",
+    "@xterm/xterm": "6.1.0-beta.287",
     "husky": "^9.1.7",
     "ink": "^7.0.5",
     "lint-staged": "^17.0.7",
