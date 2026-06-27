@@ -3,6 +3,8 @@ import checkIsUnicodeSupported from "is-unicode-supported";
 import iterm2Version from "iterm2-version";
 import React, {
   createContext,
+  Profiler,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -50,6 +52,20 @@ const ImageCacheContext = createContext<ImageCache | null>(null);
 
 export function useImageCache(): ImageCache | null {
   return useContext(ImageCacheContext);
+}
+
+type RenderListener = () => void;
+const RenderListenerContext = createContext<Set<RenderListener> | null>(null);
+
+export function useOnRender(cb: RenderListener): void {
+  const listeners = useContext(RenderListenerContext);
+  useEffect(() => {
+    if (listeners === null) return;
+    listeners.add(cb);
+    return () => {
+      listeners.delete(cb);
+    };
+  }, [cb, listeners]);
 }
 
 export interface TerminalInfo {
@@ -270,6 +286,14 @@ export function InkPictureProvider({
       : new ImageCache(resolvedConfig.cacheSize),
   );
 
+  const renderListeners = useMemo(() => new Set<() => void>(), []);
+
+  const handleRender = useCallback(() => {
+    for (const cb of renderListeners) {
+      cb();
+    }
+  }, [renderListeners]);
+
   if (!terminalInfo && !overrides) {
     return null;
   }
@@ -278,7 +302,11 @@ export function InkPictureProvider({
     <InkPictureConfigContext.Provider value={resolvedConfig}>
       <ImageCacheContext.Provider value={cache}>
         <TerminalInfoContext.Provider value={resolvedInfo}>
-          {children}
+          <RenderListenerContext.Provider value={renderListeners}>
+            <Profiler id="ink-picture" onRender={handleRender}>
+              {children}
+            </Profiler>
+          </RenderListenerContext.Provider>
         </TerminalInfoContext.Provider>
       </ImageCacheContext.Provider>
     </InkPictureConfigContext.Provider>
