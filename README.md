@@ -25,9 +25,9 @@ npm install ink-picture
 ## Quick Start
 
 ```tsx
-import React from "react";
-import { Box, render } from "ink";
-import Image, { InkPictureProvider } from "ink-picture";
+import React from 'react';
+import {Box, render} from 'ink';
+import Image, {InkPictureProvider} from 'ink-picture';
 
 function App() {
   return (
@@ -219,7 +219,7 @@ Configurations for library-wide behavior.
 | Field             | Default | Description                                                        |
 | ----------------- | ------- | ------------------------------------------------------------------ |
 | `pollIntervalMs`  | 16      | Interval in milliseconds for polling for layout changes in the app |
-| `paintIntervalMs` | 16      | Interval in milliseconds for redrawing graphical protocol images   |
+| `paintIntervalMs` | 16      | Unused; will be removed in the next major version.                 |
 | `cacheSize`       | 10      | Maximum number of cached images. Set it to 0 to disable caching    |
 
 See [Configuration](#configuration) for details.
@@ -232,8 +232,8 @@ Callback invoked after terminal capability detection completes. Use this if you 
 
 ```tsx
 <InkPictureProvider
-  config={{ cacheSize: 20 }}
-  onTerminalInfoDetection={(info) => {
+  config={{cacheSize: 20}}
+  onTerminalInfoDetection={info => {
     foo(info);
   }}
 >
@@ -255,7 +255,7 @@ import {
   SixelImage,
   KittyImage,
   ITerm2Image,
-} from "ink-picture";
+} from 'ink-picture';
 ```
 
 All protocol components must still be wrapped in `<InkPictureProvider>`. They only handle visibility detection by checking against app and terminal viewport dimensions.
@@ -324,15 +324,10 @@ Use the table below as a reference to check which protocol to use for your termi
 Please refer to [Are We Sixel Yet?](https://www.arewesixelyet.com/) for a comprehensive (but slightly out-of-date) list of terminals that support Sixel graphics.
 
 [^1]: Needs verification.
-
 [^2]: sixel and iip images cannot be erased by writing characters over them.
-
 [^3]: sixel and iip images cannot be erased by writing characters over them due to a [bug](https://github.com/xtermjs/xterm.js/issues/5860); kitty has non-compliant implementation.
-
 [^4]: VS Code integrated terminal uses xterm.js. The settings `terminal.integrated.enableImages` and `terminal.integrated.gpuAcceleration` must be enabled to render graphical images.
-
 [^5]: Information may be out-of-date. Kitty has non-compliant implementation.
-
 [^6]: Kitty has non-compliant implementation.
 
 > If you know your terminal emulator supports any of the above protocols but is not listed here, please open an issue or PR to update the table.
@@ -347,7 +342,7 @@ When no `protocol` prop is specified, `Image` selects the best protocol automati
 
 <details>
   <summary>Note on graphical protocols (sixel, kitty, iterm2)</summary>
-  Images rendered with sixel and iterm2 protocols may experience flickers during app re-renders. This is because Ink clears the terminal buffer before rendering each frame, which removes any sixel and iterm2 images, even if their positions are unchanged. The images are repainted in short intervals (default 16 ms), so they reappear almost instantly, but may still produce a short flicker. The chance of flickering may be reduced with a shorter `paintIntervalMs` at the cost of potential performance degradation.
+  Images rendered with sixel and iterm2 protocols may experience flickers during app re-renders. This is because Ink clears the terminal buffer before rendering each frame, which removes any sixel and iterm2 images, even if their positions are unchanged. To work around this, images are repainted after every React render via a React Profiler wrapped in `InkPictureProvider`, so they reappear almost instantly.
 
 In addition, images rendered with sixel, kitty, and iterm2 protocols may not persist after app exit. This is because these renderers perform image cleanup upon unmount to prevent graphical artifacts, but they cannot distinguish between a regular React component unmount and an app exit. Issues and PRs addressing this bug are much appreciated.
 
@@ -369,7 +364,7 @@ You can customize visibility detection with the `getVisibility` callback:
     defaultVisibility,
   }) => {
     // Custom logic, e.g. account for a sticky header that overlaps the image
-    if (position.row < 5) return "partial";
+    if (position.row < 5) return 'partial';
     return defaultVisibility;
   }}
 />
@@ -394,11 +389,11 @@ When Ink's screen reader mode is active, `Image` renders an empty `Box` with an 
 
 Configuration can be set through the `config` prop on `<InkPictureProvider>` or via environment variables. Environment variables take precedence over prop values.
 
-| Prop              | Env variable                 | Default | Description                                                              |
-| ----------------- | ---------------------------- | ------- | ------------------------------------------------------------------------ |
-| `pollIntervalMs`  | `INK_PICTURE_POLL_INTERVAL`  | `16`    | Interval in milliseconds for polling element layout changes.             |
-| `paintIntervalMs` | `INK_PICTURE_PAINT_INTERVAL` | `16`    | Interval in milliseconds for redrawing sixel and iterm2 protocol images. |
-| `cacheSize`       | `INK_PICTURE_CACHE_SIZE`     | `10`    | Number of decoded images to keep in memory. Set to `0` to disable.       |
+| Prop              | Env variable                 | Default | Description                                                        |
+| ----------------- | ---------------------------- | ------- | ------------------------------------------------------------------ |
+| `pollIntervalMs`  | `INK_PICTURE_POLL_INTERVAL`  | `16`    | Interval in milliseconds for polling element layout changes.       |
+| `paintIntervalMs` | `INK_PICTURE_PAINT_INTERVAL` | `16`    | Unused; will be removed in the next major version.                 |
+| `cacheSize`       | `INK_PICTURE_CACHE_SIZE`     | `10`    | Number of decoded images to keep in memory. Set to `0` to disable. |
 
 ## Contributing
 

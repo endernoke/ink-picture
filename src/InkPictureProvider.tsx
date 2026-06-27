@@ -32,12 +32,14 @@ function resolveConfig(
 
 export interface InkPictureConfig {
   pollIntervalMs: number;
+  /** @deprecated Unused since v2.0.1 — images are now repainted after each React render via the Profiler. */
   paintIntervalMs: number;
   cacheSize: number;
 }
 
 export const defaultConfig: InkPictureConfig = {
   pollIntervalMs: 16,
+  /** @deprecated */
   paintIntervalMs: 16,
   cacheSize: 10,
 };

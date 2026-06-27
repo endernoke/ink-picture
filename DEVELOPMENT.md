@@ -23,12 +23,12 @@ Graphical protocols (`sixel`, `kitty`, `iterm2`) write escape sequences directly
 
 since the terminal cursor cannot be positioned outside the viewport, graphical protocol output is skipped when the image is not fully visible, otherwise it would cause image dislocation.
 
-2. images must be repainted at intervals.
+2. Images must be repainted after each React render.
    By default, Ink clears the terminal buffer before rendering each frame, which removes any sixel and iterm2 images even if their positions are unchanged. Images will be cleared by Ink on **every re-render in the component tree**, and clearing happens without the image component knowing or re-rendering.
 
-As a result, sixel and iterm2 images have to be redrawn in short intervals in order to not get wiped by every app update. The `paintIntervalMs` config controls this rate. Each tick, the component checks the element's current position and re-writes the image data to `stdout` at the correct location.
+To solve this, the `InkPictureProvider` wraps the app in React's `<Profiler>` component. The `onRender` callback fires synchronously after every React commit in the subtree, signaling `useDirectRenderer` to immediately repaint any sixel or iTerm2 images at their current positions.
 
-Note that this does not apply to the kitty renderer because kitty graphics do not share the same buffer as text by design. Writing spaces over kitty images does not clear them.
+Note that this does not apply to the kitty renderer because kitty graphics do not share the same buffer as text by design. Clearing text or writing characters over kitty images does not clear them.
 
 3. Active polling is required to respond to layout changes.
    Element positions can be computed after each React render of a component, but layout changes can occur without triggering a re-render (e.g. parent dimensions change). Images may therefore be dislocated immediately after a layout change. To solve this, a polling loop (at `pollIntervalMs`) traverses the Yoga layout tree to detect and propagate position changes.
@@ -37,7 +37,7 @@ Note that this does not apply to the kitty renderer because kitty graphics do no
 
 Sixel and iTerm2 images share the same rendering mechanism via `useDirectRenderer`:
 
-- On each tick, it writes the image output to `stdout` at the element's position using ANSI cursor movement sequences.
+- Via `useOnRender`, it registers a callback that writes the image output to `stdout` at the element's position after every React commit in the app tree, using ANSI cursor movement sequences. This is driven by React's `<Profiler>` `onRender` hook, so images are repainted exactly when Ink clears the terminal.
 - On unmount, it fills the image's bounding box with background-colored spaces (or plain spaces) to clean up the area.
 - `useBackgroundColor` walks up the React element tree to find the nearest ancestor with a `backgroundColor` style set, so clean-up spaces match the surrounding background.
 
@@ -80,7 +80,7 @@ src/
 │   └── ImageBox.tsx            # Shared container with loading and error states
 ├── hooks/
 │   ├── useBackgroundColor.ts   # Inherited background color detection
-│   ├── useDirectRenderer.ts    # Interval-based stdout painting for Sixel and iTerm2
+│   ├── useDirectRenderer.ts    # Profiler-driven stdout painting for Sixel and iTerm2
 │   ├── useImage.ts             # Image loading, caching, and resizing
 │   ├── useMeasuredSize.ts      # Percentage dimension resolution
 │   ├── usePosition.ts          # Element position tracking with active polling for layout changes
