@@ -62,5 +62,6 @@ export {
   TerminalInfoProvider,
   useImageCache,
   useInkPictureConfig,
+  useOnRender,
   useTerminalInfo,
 } from "./InkPictureProvider.js";

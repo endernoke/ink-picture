@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
-import { useInkPictureConfig } from "../InkPictureProvider.js";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useOnRender } from "../InkPictureProvider.js";
 import { cursorForward, cursorUp } from "../utils/ansiEscapes.js";
 import bgColorize from "../utils/bgColorize.js";
 import type { Position } from "./usePosition.js";
@@ -52,9 +52,27 @@ export function useDirectRenderer(options: DirectRendererOptions) {
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  const config = useInkPictureConfig();
-  const configRef = useRef(config);
-  configRef.current = config;
+  const writeNow = useCallback(() => {
+    const opt = optionsRef.current;
+    if (!opt.enabled || !opt.position) return;
+    if (
+      defaultVisibility(opt.position, opt.stdout.rows, opt.stdout.columns) !==
+      "full"
+    )
+      return;
+
+    previousBboxRef.current = writeImageToStdout(
+      opt.position,
+      opt.imageOutput,
+      opt.stdout,
+      opt.width,
+      opt.height,
+    );
+  }, []);
+
+  // Repaint after every React render commit, since Ink clears the terminal
+  // on each render cycle, wiping any direct-to-stdout image output.
+  useOnRender(writeNow);
 
   useLayoutEffect(() => {
     return () => {
@@ -85,8 +103,6 @@ export function useDirectRenderer(options: DirectRendererOptions) {
   });
 
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-
     function onExit() {
       shouldCleanupRef.current = false;
     }
@@ -98,43 +114,10 @@ export function useDirectRenderer(options: DirectRendererOptions) {
     process.on("SIGINT", onSigInt);
     process.on("SIGTERM", onSigInt);
 
-    function schedule() {
-      timeout = setTimeout(tick, configRef.current.paintIntervalMs);
-      timeout.unref();
-    }
-
-    function tick() {
-      const opt = optionsRef.current;
-      if (!opt.enabled || !opt.position) {
-        schedule();
-        return;
-      }
-      if (
-        defaultVisibility(opt.position, opt.stdout.rows, opt.stdout.columns) !==
-        "full"
-      ) {
-        schedule();
-        return;
-      }
-
-      previousBboxRef.current = writeImageToStdout(
-        opt.position,
-        opt.imageOutput,
-        opt.stdout,
-        opt.width,
-        opt.height,
-      );
-
-      schedule();
-    }
-
-    schedule();
-
     return () => {
       process.removeListener("exit", onExit);
       process.removeListener("SIGINT", onSigInt);
       process.removeListener("SIGTERM", onSigInt);
-      clearTimeout(timeout);
     };
   }, []);
 }
