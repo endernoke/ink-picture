@@ -46,11 +46,11 @@ importers:
         specifier: ^19.2.17
         version: 19.2.17
       '@xterm/addon-image':
-        specifier: 0.10.0-beta.197
-        version: 0.10.0-beta.197(@xterm/xterm@6.1.0-beta.197)
+        specifier: 0.10.0-beta.288
+        version: 0.10.0-beta.288(@xterm/xterm@6.1.0-beta.288)
       '@xterm/xterm':
-        specifier: 6.1.0-beta.197
-        version: 6.1.0-beta.197
+        specifier: 6.1.0-beta.288
+        version: 6.1.0-beta.288
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -468,13 +468,13 @@ packages:
     resolution: {integrity: sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==}
     engines: {node: '>=14.6'}
 
-  '@xterm/addon-image@0.10.0-beta.197':
-    resolution: {integrity: sha512-31oIqBm+Yk3xyYGjBhhp308gDyFywv3JJAWBflycgqZFbvfZ2ju4IvHmvKJhp8qC+0ac6SRAA7XBKGqtoZjcsA==}
+  '@xterm/addon-image@0.10.0-beta.288':
+    resolution: {integrity: sha512-zlgz0IIG3Te/aP4Kg1xRgWvCzgMgAk3LOP+RvGJAfP2g8tMFZBqcVVdX9BWTsp6hZQ4XaBPiiW+bORms/0Y3OQ==}
     peerDependencies:
-      '@xterm/xterm': ^6.1.0-beta.197
+      '@xterm/xterm': ^6.1.0-beta.288
 
-  '@xterm/xterm@6.1.0-beta.197':
-    resolution: {integrity: sha512-vzoc8sBcsvFpziSgeVGKZQDT1T/9MmEUKfUDpVqc3slDv7o0SiQCjvPeOF8y1++5vx2xmUn8lfcLnbfdtigtSQ==}
+  '@xterm/xterm@6.1.0-beta.288':
+    resolution: {integrity: sha512-XLtX5kO0bgvjOEypUtO5xYUykE+vbJuQPuRK2cIx7oBFwlSYXGCVKPC7pvkLOYsfJWqJ9yusIaeJQqJvrYT1kQ==}
 
   acorn-walk@8.3.5:
     resolution: {integrity: sha512-HEHNfbars9v4pgpW6SO1KSPkfoS0xVOM/9UzkJltjlsHZmJasxg8aXkuZa7SMf8vKGIBhpUsPluQSqhJFCqebw==}
@@ -1019,8 +1019,8 @@ packages:
     resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
     engines: {node: '>=14.19.0'}
 
-  postcss@8.5.15:
-    resolution: {integrity: sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==}
+  postcss@8.5.16:
+    resolution: {integrity: sha512-vuwillviilfKZsg0VGj5R/YwwcHx4SLsIOI/7K6mQkWx+l5cUHTjj5g0AasTBcyXsbfTgrwsUNmVUb5xVwyPwg==}
     engines: {node: ^10 || ^12 || >=14}
 
   react-reconciler@0.33.0:
@@ -1811,11 +1811,11 @@ snapshots:
 
   '@xmldom/xmldom@0.9.10': {}
 
-  '@xterm/addon-image@0.10.0-beta.197(@xterm/xterm@6.1.0-beta.197)':
+  '@xterm/addon-image@0.10.0-beta.288(@xterm/xterm@6.1.0-beta.288)':
     dependencies:
-      '@xterm/xterm': 6.1.0-beta.197
+      '@xterm/xterm': 6.1.0-beta.288
 
-  '@xterm/xterm@6.1.0-beta.197': {}
+  '@xterm/xterm@6.1.0-beta.288': {}
 
   acorn-walk@8.3.5:
     dependencies:
@@ -2317,7 +2317,7 @@ snapshots:
 
   pngjs@7.0.0: {}
 
-  postcss@8.5.15:
+  postcss@8.5.16:
     dependencies:
       nanoid: 3.3.15
       picocolors: 1.1.1
@@ -2499,7 +2499,7 @@ snapshots:
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.4
-      postcss: 8.5.15
+      postcss: 8.5.16
       rolldown: 1.0.0
       tinyglobby: 0.2.17
     optionalDependencies:
