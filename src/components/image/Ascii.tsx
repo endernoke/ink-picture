@@ -9,7 +9,7 @@ import type { ImageProps } from "./protocol.js";
 
 function AsciiImage(props: ImageProps) {
   const terminalInfo = useTerminalInfo();
-  const { src, width, height, alt } = props;
+  const { src, width, height, alt, objectFit } = props;
 
   const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
     width,
@@ -21,6 +21,7 @@ function AsciiImage(props: ImageProps) {
     pixelWidth: resolvedWidth,
     pixelHeight: resolvedHeight,
     mode: "pixels",
+    objectFit,
   });
 
   const imageOutput = useMemo(() => {

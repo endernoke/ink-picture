@@ -18,7 +18,7 @@ import type { ImageProps } from "./protocol.js";
 function KittyImage(props: ImageProps) {
   const terminalInfo = useTerminalInfo();
   const { stdout } = useStdout();
-  const { src, width, height, alt } = props;
+  const { src, width, height, alt, objectFit } = props;
 
   const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
     width,
@@ -35,6 +35,7 @@ function KittyImage(props: ImageProps) {
     pixelWidth,
     pixelHeight,
     mode: "png",
+    objectFit,
   });
 
   const [imageId, setImageId] = useState<number | undefined>(undefined);

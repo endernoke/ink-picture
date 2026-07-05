@@ -13,6 +13,13 @@ export interface ImageProps {
   height: number | string;
   /** Alternative text displayed while loading or on error */
   alt?: string;
+  /**
+   * How the image should be resized to fit the given dimensions.
+   * - `"fill"` (default): stretch to fill the box.
+   * - `"contain"`: preserve aspect ratio and fit the whole image inside the box.
+   * - `"cover"`: preserve aspect ratio and cover the box, cropping overflow.
+   */
+  objectFit?: "fill" | "contain" | "cover";
 }
 
 /**

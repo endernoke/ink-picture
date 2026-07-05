@@ -7,7 +7,7 @@ import ImageBox from "../ImageBox.js";
 import type { ImageProps } from "./protocol.js";
 
 function HalfBlockImage(props: ImageProps) {
-  const { src, width, height, alt } = props;
+  const { src, width, height, alt, objectFit } = props;
 
   const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
     width,
@@ -19,6 +19,7 @@ function HalfBlockImage(props: ImageProps) {
     pixelWidth: resolvedWidth,
     pixelHeight: resolvedHeight * 2,
     mode: "pixels",
+    objectFit,
   });
 
   const imageOutput = useMemo(() => {

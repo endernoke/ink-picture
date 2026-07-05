@@ -2,17 +2,29 @@ import { type Jimp } from "jimp";
 import { useEffect, useState } from "react";
 import { useImageCache } from "../InkPictureProvider.js";
 import type { PixelData, PngData } from "../renderers/types.js";
-import { fetchImage, getPngBuffer, getRawPixels } from "../utils/image.js";
+import {
+  fetchImage,
+  getPngBuffer,
+  getRawPixels,
+  resizeImage,
+} from "../utils/image.js";
 
 export function useImage<T extends "pixels" | "png" = "pixels">(options: {
   src: Parameters<typeof Jimp.read>[0];
   pixelWidth: number;
   pixelHeight: number;
   mode?: T;
+  objectFit?: "fill" | "contain" | "cover";
 }): T extends "png"
   ? { imageData: PngData | undefined; error: boolean }
   : { imageData: PixelData | undefined; error: boolean } {
-  const { src, pixelWidth, pixelHeight, mode = "pixels" } = options;
+  const {
+    src,
+    pixelWidth,
+    pixelHeight,
+    mode = "pixels",
+    objectFit = "fill",
+  } = options;
   const [imageData, setImageData] = useState<PngData | PixelData | undefined>(
     undefined,
   );
@@ -43,7 +55,7 @@ export function useImage<T extends "pixels" | "png" = "pixels">(options: {
       }
 
       setError(false);
-      image.resize({ w: pixelWidth, h: pixelHeight });
+      resizeImage(image, objectFit, pixelWidth, pixelHeight);
 
       if (mode === "png") {
         const result = await getPngBuffer(image);
@@ -63,7 +75,7 @@ export function useImage<T extends "pixels" | "png" = "pixels">(options: {
     return () => {
       cancelled = true;
     };
-  }, [src, pixelWidth, pixelHeight, mode, cache]);
+  }, [src, pixelWidth, pixelHeight, mode, objectFit, cache]);
 
   return { imageData, error } as T extends "png"
     ? { imageData: PngData | undefined; error: boolean }
