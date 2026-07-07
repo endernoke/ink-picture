@@ -63,6 +63,10 @@ function rgbaToBlackOrWhite({
   b: number;
   a: number;
 }) {
+  if (a === 0) {
+    return 0;
+  }
+
   const alpha = a / 255;
   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   const alphaAdjustedLuminance = luminance * alpha + 255 * (1 - alpha);

@@ -15,6 +15,7 @@ export function useImage<T extends "pixels" | "png" = "pixels">(options: {
   pixelHeight: number;
   mode?: T;
   objectFit?: "fill" | "contain" | "cover";
+  cellRatio?: number;
 }): T extends "png"
   ? { imageData: PngData | undefined; error: boolean }
   : { imageData: PixelData | undefined; error: boolean } {
@@ -24,6 +25,7 @@ export function useImage<T extends "pixels" | "png" = "pixels">(options: {
     pixelHeight,
     mode = "pixels",
     objectFit = "fill",
+    cellRatio,
   } = options;
   const [imageData, setImageData] = useState<PngData | PixelData | undefined>(
     undefined,
@@ -55,7 +57,7 @@ export function useImage<T extends "pixels" | "png" = "pixels">(options: {
       }
 
       setError(false);
-      resizeImage(image, objectFit, pixelWidth, pixelHeight);
+      resizeImage(image, objectFit, pixelWidth, pixelHeight, cellRatio);
 
       if (mode === "png") {
         const result = await getPngBuffer(image);
@@ -75,7 +77,7 @@ export function useImage<T extends "pixels" | "png" = "pixels">(options: {
     return () => {
       cancelled = true;
     };
-  }, [src, pixelWidth, pixelHeight, mode, objectFit, cache]);
+  }, [src, pixelWidth, pixelHeight, mode, objectFit, cache, cellRatio]);
 
   return { imageData, error } as T extends "png"
     ? { imageData: PngData | undefined; error: boolean }

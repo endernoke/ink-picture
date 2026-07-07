@@ -16,12 +16,18 @@ function AsciiImage(props: ImageProps) {
     height,
   );
 
+  const cellRatio =
+    terminalInfo?.cellHeight && terminalInfo.cellWidth
+      ? terminalInfo.cellHeight / terminalInfo.cellWidth
+      : 2;
+
   const { imageData, error } = useImage({
     src,
     pixelWidth: resolvedWidth,
     pixelHeight: resolvedHeight,
     mode: "pixels",
     objectFit,
+    cellRatio,
   });
 
   const imageOutput = useMemo(() => {

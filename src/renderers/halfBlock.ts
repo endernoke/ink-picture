@@ -1,9 +1,13 @@
 import chalk from "chalk";
+import bgColorize from "../utils/bgColorize.js";
 import type { PixelData } from "./types.js";
 
 const HALF_BLOCK = "\u2584";
 
-export function renderHalfBlock(pixels: PixelData): string {
+export function renderHalfBlock(
+  pixels: PixelData,
+  options: { bgColor?: string } = {},
+): string {
   const { data, info } = pixels;
   const { width, height, channels } = info;
 
@@ -24,7 +28,9 @@ export function renderHalfBlock(pixels: PixelData): string {
 
       result +=
         a === 0
-          ? chalk.reset(" ")
+          ? options.bgColor
+            ? bgColorize(" ", options.bgColor)
+            : chalk.reset(" ")
           : chalk.bgRgb(r, g, b).rgb(r2, g2, b2)(HALF_BLOCK);
     }
 

@@ -57,7 +57,15 @@ export function resizeImage(
   objectFit: "fill" | "contain" | "cover",
   width: number,
   height: number,
+  cellRatio?: number,
 ): void {
+  if (cellRatio !== undefined && cellRatio !== 1 && objectFit !== "fill") {
+    image.resize({
+      w: Math.round(image.bitmap.width * cellRatio),
+      h: image.bitmap.height,
+    });
+  }
+
   switch (objectFit) {
     case "contain":
       image.contain({ w: width, h: height });
