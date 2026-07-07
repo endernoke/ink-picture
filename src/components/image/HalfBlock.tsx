@@ -1,5 +1,6 @@
 import { Text } from "ink";
 import React, { useMemo } from "react";
+import useBackgroundColor from "../../hooks/useBackgroundColor.js";
 import { useImage } from "../../hooks/useImage.js";
 import { useMeasuredSize } from "../../hooks/useMeasuredSize.js";
 import { renderHalfBlock } from "../../renderers/halfBlock.js";
@@ -7,7 +8,7 @@ import ImageBox from "../ImageBox.js";
 import type { ImageProps } from "./protocol.js";
 
 function HalfBlockImage(props: ImageProps) {
-  const { src, width, height, alt } = props;
+  const { src, width, height, alt, objectFit } = props;
 
   const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
     width,
@@ -19,12 +20,14 @@ function HalfBlockImage(props: ImageProps) {
     pixelWidth: resolvedWidth,
     pixelHeight: resolvedHeight * 2,
     mode: "pixels",
+    objectFit,
   });
+  const inheritedBackgroundColor = useBackgroundColor(containerRef);
 
   const imageOutput = useMemo(() => {
     if (!imageData) return null;
-    return renderHalfBlock(imageData);
-  }, [imageData]);
+    return renderHalfBlock(imageData, { bgColor: inheritedBackgroundColor });
+  }, [imageData, inheritedBackgroundColor]);
 
   return (
     <ImageBox

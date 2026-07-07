@@ -26,11 +26,11 @@ describe("renderBraille", () => {
     expect(result[0]).toBe("\u2800");
   });
 
-  it("handles transparent pixels as white", () => {
+  it("renders transparent pixels as whitespace", () => {
     const pixels = makePixelData(2, 4, solidColor(0, 0, 0, 0));
     const result = renderBraille(pixels);
 
-    expect(result[0]).toBe("\u28ff");
+    expect(result[0]).toBe("\u2800");
   });
 
   it("handles RGB data without alpha", () => {

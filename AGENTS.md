@@ -1,7 +1,9 @@
+Read DEVELOPMENT.md for implementation decisions and explanations.
+
 After making non-trivial changes, always run linter and tests, and fix any issues that arise.
 Prefer using commands (`biome format`, `biome lint --fix`) over manual edits to fix formatting and lint issues.
 
-Add new tests after implementing new features. In generally:
+Add new tests after implementing new features. In general:
 
 - Tests that don't require the terminal interpreting escape sequences should go under `tests/vitest`
 - tests that require a full-fledged terminal environment should go under `tests/playwright`, which spins up a real xterm.js terminal to run tests

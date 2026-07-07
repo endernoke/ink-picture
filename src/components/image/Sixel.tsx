@@ -13,7 +13,7 @@ import type { ImageProps } from "./protocol.js";
 function SixelImage(props: ImageProps) {
   const terminalInfo = useTerminalInfo();
   const { stdout } = useStdout();
-  const { src, width, height, alt } = props;
+  const { src, width, height, alt, objectFit } = props;
 
   const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
     width,
@@ -31,6 +31,7 @@ function SixelImage(props: ImageProps) {
     pixelWidth,
     pixelHeight,
     mode: "pixels",
+    objectFit,
   });
 
   const imageOutput = useMemo(() => {

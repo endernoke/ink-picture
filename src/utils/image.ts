@@ -52,65 +52,28 @@ export async function getPngBuffer(
   };
 }
 
-export function calculateImageSize({
-  maxWidth,
-  maxHeight,
-  originalAspectRatio,
-  specifiedWidth,
-  specifiedHeight,
-}: {
-  maxWidth: number;
-  maxHeight: number;
-  originalAspectRatio: number;
-  specifiedWidth?: number;
-  specifiedHeight?: number;
-}): { width: number; height: number } {
-  // Both width and height specified
-  if (specifiedWidth && specifiedHeight) {
-    const width = Math.min(specifiedWidth, maxWidth);
-    const height = Math.min(specifiedHeight, maxHeight);
-    return { width: Math.round(width), height: Math.round(height) };
+export function resizeImage(
+  image: JimpImage,
+  objectFit: "fill" | "contain" | "cover",
+  width: number,
+  height: number,
+  cellRatio?: number,
+): void {
+  if (cellRatio !== undefined && cellRatio !== 1 && objectFit !== "fill") {
+    image.resize({
+      w: Math.round(image.bitmap.width * cellRatio),
+      h: image.bitmap.height,
+    });
   }
 
-  // Only width specified
-  if (specifiedWidth) {
-    let width = Math.min(specifiedWidth, maxWidth);
-    let height = width / originalAspectRatio;
-
-    if (height > maxHeight) {
-      height = maxHeight;
-      width = height * originalAspectRatio;
-    }
-
-    return { width: Math.round(width), height: Math.round(height) };
+  switch (objectFit) {
+    case "contain":
+      image.contain({ w: width, h: height });
+      break;
+    case "cover":
+      image.cover({ w: width, h: height });
+      break;
+    default:
+      image.resize({ w: width, h: height });
   }
-
-  // Only height specified
-  if (specifiedHeight) {
-    let height = Math.min(specifiedHeight, maxHeight);
-    let width = height * originalAspectRatio;
-
-    if (width > maxWidth) {
-      width = maxWidth;
-      height = width / originalAspectRatio;
-    }
-
-    return { width: Math.round(width), height: Math.round(height) };
-  }
-
-  // No dimensions specified - scale to fit while maintaining aspect ratio
-  let height = maxHeight;
-  let width = height * originalAspectRatio;
-
-  if (width > maxWidth) {
-    width = maxWidth;
-    height = width / originalAspectRatio;
-  }
-
-  if (height > maxHeight) {
-    height = maxHeight;
-    width = height * originalAspectRatio;
-  }
-
-  return { width: Math.round(width), height: Math.round(height) };
 }

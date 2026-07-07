@@ -13,7 +13,7 @@ import type { ImageProps } from "./protocol.js";
 function ITerm2Image(props: ImageProps) {
   const terminalInfo = useTerminalInfo();
   const { stdout } = useStdout();
-  const { src, width, height, alt } = props;
+  const { src, width, height, alt, objectFit } = props;
 
   const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
     width,
@@ -31,6 +31,7 @@ function ITerm2Image(props: ImageProps) {
     pixelWidth,
     pixelHeight,
     mode: "png",
+    objectFit,
   });
 
   const imageOutput = useMemo(() => {

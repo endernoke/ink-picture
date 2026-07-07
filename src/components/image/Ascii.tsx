@@ -9,18 +9,25 @@ import type { ImageProps } from "./protocol.js";
 
 function AsciiImage(props: ImageProps) {
   const terminalInfo = useTerminalInfo();
-  const { src, width, height, alt } = props;
+  const { src, width, height, alt, objectFit } = props;
 
   const { containerRef, resolvedWidth, resolvedHeight } = useMeasuredSize(
     width,
     height,
   );
 
+  const cellRatio =
+    terminalInfo?.cellHeight && terminalInfo.cellWidth
+      ? terminalInfo.cellHeight / terminalInfo.cellWidth
+      : 2;
+
   const { imageData, error } = useImage({
     src,
     pixelWidth: resolvedWidth,
     pixelHeight: resolvedHeight,
     mode: "pixels",
+    objectFit,
+    cellRatio,
   });
 
   const imageOutput = useMemo(() => {

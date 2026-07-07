@@ -123,6 +123,29 @@ Alternative text displayed during image loading and error. It is also used in In
 <Image src="path/to/image.png" alt="a close-up shot of a red brick house" />
 ```
 
+#### `objectFit` (optional)
+
+type: `"fill" | "contain" | "cover"`
+
+default: `"fill"`
+
+Controls how the image is resized to fit the dimensions given by `width` and `height`.
+
+- `"fill"` (default): stretches the image to fill the entire box.
+- `"contain"`: preserves the image's aspect ratio and scales it to fit entirely inside the box. Empty space is centered around the image.
+- `"cover"`: preserves the image's aspect ratio and scales it to cover the entire box, cropping any overflow.
+
+```tsx
+// Stretch to fill (default)
+<Image src="path/to/image.png" width={20} height={10} />
+
+// Preserve aspect ratio and fit inside the box
+<Image src="path/to/image.png" width={20} height={10} objectFit="contain" />
+
+// Preserve aspect ratio and fill the box, cropping as needed
+<Image src="path/to/image.png" width={20} height={10} objectFit="cover" />
+```
+
 #### `protocol` (optional)
 
 type: `ImageProtocolName | ImageProtocolHint`
