@@ -26,7 +26,7 @@ describe("renderBraille", () => {
     expect(result[0]).toBe("\u2800");
   });
 
-  it("render transparent pixels as whitespace", () => {
+  it("renders transparent pixels as whitespace", () => {
     const pixels = makePixelData(2, 4, solidColor(0, 0, 0, 0));
     const result = renderBraille(pixels);
 
