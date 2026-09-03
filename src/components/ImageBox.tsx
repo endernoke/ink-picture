@@ -16,7 +16,7 @@ const ImageBox = forwardRef<DOMElement, ImageBoxProps>(function ImageBox(
 ) {
   return (
     <Box ref={ref} flexDirection="column" width={width} height={height}>
-      {loaded && children ? (
+      {loaded ? (
         children
       ) : (
         <Box
